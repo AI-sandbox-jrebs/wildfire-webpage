@@ -10,16 +10,33 @@ const map = L.map("map", {
   minZoom: 2,
   zoomControl: false,
   worldCopyJump: true,
+  preferCanvas: true,
+  zoomSnap: 0.5,
+  zoomDelta: 0.5,
+  wheelPxPerZoomLevel: 90,
+  inertiaDeceleration: 2400,
 });
+
+/* Keep a wide ring of tiles around the viewport so panning reveals
+   already-loaded cells instead of blanks. */
+const TILE_OPTS = {
+  keepBuffer: 6,
+  updateWhenIdle: false,
+  updateWhenZooming: false,
+  updateInterval: 80,
+  crossOrigin: true,
+};
 L.control.zoom({ position: "bottomright" }).addTo(map);
 
 L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
   attribution: '&copy; OpenStreetMap &copy; CARTO',
   maxZoom: 18,
+  ...TILE_OPTS,
 }).addTo(map);
 L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png", {
   maxZoom: 18,
   pane: "shadowPane",
+  ...TILE_OPTS,
 }).addTo(map);
 
 const fireLayer = L.layerGroup().addTo(map);
@@ -158,6 +175,8 @@ function radarLayer(host, frame) {
     opacity: 0,
     zIndex: 400,
     maxZoom: 12,
+    keepBuffer: 4,
+    updateWhenIdle: false,
     attribution: '&copy; <a href="https://www.rainviewer.com/">RainViewer</a>',
   });
 }
@@ -204,6 +223,21 @@ document.getElementById("toggle-anim").addEventListener("change", (e) => {
 document.getElementById("toggle-fires").addEventListener("change", (e) => {
   if (e.target.checked) fireLayer.addTo(map);
   else map.removeLayer(fireLayer);
+});
+
+/* Mobile: panels collapse into toggle chips. */
+document.querySelectorAll("[data-toggle-panel]").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const panel = document.querySelector(btn.dataset.togglePanel);
+    const open = panel.classList.toggle("open");
+    document
+      .querySelectorAll(".panel.open")
+      .forEach((p) => p !== panel && p.classList.remove("open"));
+    btn.classList.toggle("active", open);
+    document
+      .querySelectorAll("[data-toggle-panel]")
+      .forEach((b) => b !== btn && b.classList.remove("active"));
+  });
 });
 
 loadFires().catch((err) => console.error("fires failed", err));

@@ -114,10 +114,50 @@ html, body {
 .pop .spark i.future { background: linear-gradient(180deg, #7b5cff, #3b3a86); }
 .pop .spark-label { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); }
 
+.chips { display: none; }
+
 @media (max-width: 900px) {
-  .panel { position: static; width: auto !important; margin: 10px; }
-  body { overflow-y: auto; }
-  #map { position: relative; height: 62vh; }
-  .credit { position: static; display: block; margin: 0 10px 16px; }
-  .panel--list { max-height: 320px; }
+  #map { position: fixed; inset: 0; height: 100dvh; }
+
+  .chips {
+    display: flex;
+    gap: 8px;
+    position: fixed;
+    top: calc(10px + env(safe-area-inset-top));
+    left: 10px;
+    right: 10px;
+    z-index: 600;
+  }
+  .chips button {
+    flex: 1;
+    padding: 9px 0;
+    border: 1px solid var(--stroke);
+    border-radius: 999px;
+    background: var(--panel);
+    backdrop-filter: blur(14px);
+    color: var(--text);
+    font: 600 13px/1 inherit;
+    font-family: inherit;
+  }
+  .chips button.active { border-color: var(--rain); color: var(--rain); }
+
+  .panel {
+    display: none;
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    top: auto;
+    bottom: calc(10px + env(safe-area-inset-bottom));
+    width: auto !important;
+    max-height: 55dvh;
+    overflow: auto;
+    z-index: 600;
+  }
+  .panel.open { display: block; }
+
+  .panel--list li { padding: 12px 10px; }
+  .toggle { padding: 6px 0; }
+
+  .credit { left: 10px; right: 10px; bottom: 2px; text-align: center; }
+  .leaflet-control-zoom { display: none; }
 }
