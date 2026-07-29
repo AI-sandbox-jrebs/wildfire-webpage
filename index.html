@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Wildfire &amp; Rainfall Watch</title>
+<meta name="description" content="Live wildfire activity with a live rainfall radar overlay." />
+<link rel="preconnect" href="https://basemaps.cartocdn.com" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div id="map" aria-label="Map of active wildfires and rainfall radar"></div>
+
+<header class="panel panel--head">
+  <h1>Wildfire <span>&amp;</span> Rainfall</h1>
+  <p class="sub">Active fires with live precipitation radar</p>
+  <dl class="stats">
+    <div><dt>Fires</dt><dd id="stat-fires">–</dd></div>
+    <div><dt>Acres burning</dt><dd id="stat-acres">–</dd></div>
+    <div><dt>Dry 7 days</dt><dd id="stat-dry">–</dd></div>
+  </dl>
+  <p class="updated">Data refreshed <span id="stat-updated">–</span></p>
+</header>
+
+<section class="panel panel--legend">
+  <div class="legend-row">
+    <span class="legend-title">Fire size</span>
+    <span class="dots"><i class="dot dot--s"></i><i class="dot dot--m"></i><i class="dot dot--l"></i></span>
+    <span class="legend-scale"><b>100</b> – <b>100k+</b> acres</span>
+  </div>
+  <div class="legend-row">
+    <span class="legend-title">Rain radar</span>
+    <span class="rain-bar" aria-hidden="true"></span>
+    <span class="legend-scale">light – heavy</span>
+  </div>
+  <label class="toggle"><input type="checkbox" id="toggle-rain" checked /> Rainfall radar</label>
+  <label class="toggle"><input type="checkbox" id="toggle-anim" checked /> Animate last 2 h</label>
+  <label class="toggle"><input type="checkbox" id="toggle-fires" checked /> Fires</label>
+  <p class="radar-time">Radar frame <span id="radar-time">–</span></p>
+</section>
+
+<section class="panel panel--list" aria-label="Largest active fires">
+  <h2>Largest fires</h2>
+  <ul id="fire-list"></ul>
+</section>
+
+<footer class="credit">
+  Fires: <a href="https://data-nifc.opendata.arcgis.com/">NIFC WFIGS</a> &amp;
+  <a href="https://eonet.gsfc.nasa.gov/">NASA EONET</a> · Rain radar:
+  <a href="https://www.rainviewer.com/">RainViewer</a> · Precip: <a href="https://open-meteo.com/">Open-Meteo</a>
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
