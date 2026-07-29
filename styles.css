@@ -114,6 +114,27 @@ html, body {
 .pop .spark i.future { background: linear-gradient(180deg, #7b5cff, #3b3a86); }
 .pop .spark-label { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); }
 
+.error-banner {
+  position: fixed;
+  left: 50%;
+  bottom: 22px;
+  transform: translate(-50%, 20px);
+  z-index: 700;
+  max-width: min(92vw, 420px);
+  padding: 10px 16px;
+  border: 1px solid rgba(255, 120, 80, 0.5);
+  border-radius: 12px;
+  background: rgba(40, 16, 12, 0.92);
+  backdrop-filter: blur(10px);
+  color: #ffd9c7;
+  font-size: 13px;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.error-banner.show { opacity: 1; transform: translate(-50%, 0); }
+
 .chips { display: none; }
 
 @media (max-width: 900px) {

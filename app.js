@@ -4,10 +4,39 @@
 const RAINVIEWER_INDEX = "https://api.rainviewer.com/public/weather-maps.json";
 const ANIMATION_MS = 700;
 
+/* iOS Safari (WebKit) is the memory-tightest target: cap tile prefetch and
+   radar history so pinch-zoom can't blow the tab's memory budget. */
+const IS_TOUCH = window.matchMedia("(pointer: coarse)").matches;
+const MAX_ZOOM = 18;
+
+/* Never let a stray runtime error blank the whole page — surface it, keep the
+   map alive. */
+function showBanner(msg) {
+  let el = document.getElementById("error-banner");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "error-banner";
+    el.className = "error-banner";
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(showBanner._t);
+  showBanner._t = setTimeout(() => el.classList.remove("show"), 6000);
+}
+window.addEventListener("error", (e) => {
+  console.error(e.error || e.message);
+  showBanner("Something hiccuped — the map is still usable.");
+});
+window.addEventListener("unhandledrejection", (e) => {
+  console.error("unhandled", e.reason);
+});
+
 const map = L.map("map", {
   center: [39.5, -108],
   zoom: 5,
   minZoom: 2,
+  maxZoom: MAX_ZOOM,
   zoomControl: false,
   worldCopyJump: true,
   preferCanvas: true,
@@ -15,26 +44,25 @@ const map = L.map("map", {
   zoomDelta: 0.5,
   wheelPxPerZoomLevel: 90,
   inertiaDeceleration: 2400,
+  // WebKit chokes on very fast pinch bounce animations with many layers.
+  bounceAtZoomLimits: false,
 });
 
-/* Keep a wide ring of tiles around the viewport so panning reveals
-   already-loaded cells instead of blanks. */
 const TILE_OPTS = {
-  keepBuffer: 6,
-  updateWhenIdle: false,
+  keepBuffer: IS_TOUCH ? 2 : 4,
+  updateWhenIdle: IS_TOUCH,
   updateWhenZooming: false,
-  updateInterval: 80,
+  updateInterval: 120,
   crossOrigin: true,
+  maxZoom: MAX_ZOOM,
 };
 L.control.zoom({ position: "bottomright" }).addTo(map);
 
 L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
   attribution: '&copy; OpenStreetMap &copy; CARTO',
-  maxZoom: 18,
   ...TILE_OPTS,
 }).addTo(map);
 L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png", {
-  maxZoom: 18,
   pane: "shadowPane",
   ...TILE_OPTS,
 }).addTo(map);
@@ -150,9 +178,13 @@ async function loadFires() {
       markersByKey.set(featureKey(f), marker);
     });
   renderList(geo.features);
+  let raf = 0;
   map.on("zoomend", () => {
-    const z = zoomFactor();
-    markersByKey.forEach((m) => m.setRadius(m.baseRadius * z));
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => {
+      const z = zoomFactor();
+      markersByKey.forEach((m) => m.setRadius(m.baseRadius * z));
+    });
   });
   return geo;
 }
@@ -167,54 +199,79 @@ async function loadSummary() {
   document.getElementById("stat-updated").textContent = new Date(s.generated).toLocaleString();
 }
 
-/* ---- rainfall radar ---- */
-const radar = { frames: [], layers: [], index: 0, timer: null, visible: true, animate: true };
+/* ---- rainfall radar ----
+   A single tile layer whose URL is swapped per animation frame. Stacking one
+   layer per frame (the old approach) kept every frame's tiles resident and
+   crashed iOS Safari on pinch-zoom; one layer holds a bounded tile set. */
+const radar = {
+  host: "",
+  frames: [],
+  index: 0,
+  timer: null,
+  visible: true,
+  animate: true,
+  layer: null,
+};
 
-function radarLayer(host, frame) {
-  return L.tileLayer(`${host}${frame.path}/512/{z}/{x}/{y}/4/1_1.png`, {
-    opacity: 0,
-    zIndex: 400,
-    maxZoom: 12,
-    keepBuffer: 4,
-    updateWhenIdle: false,
-    attribution: '&copy; <a href="https://www.rainviewer.com/">RainViewer</a>',
-  });
+function frameUrl(frame) {
+  return `${radar.host}${frame.path}/256/{z}/{x}/{y}/4/1_1.png`;
 }
 
 function showFrame(i) {
-  radar.layers.forEach((layer, idx) => layer.setOpacity(idx === i && radar.visible ? 0.75 : 0));
-  const t = radar.frames[i];
-  document.getElementById("radar-time").textContent = t
-    ? new Date(t.time * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-    : "–";
+  const frame = radar.frames[i];
+  if (!frame || !radar.layer) return;
+  radar.index = i;
+  radar.layer.setUrl(frameUrl(frame));
+  const label = document.getElementById("radar-time");
+  if (label) {
+    label.textContent = new Date(frame.time * 1000).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
 }
 
 function tick() {
-  radar.index = (radar.index + 1) % radar.layers.length;
-  showFrame(radar.index);
+  showFrame((radar.index + 1) % radar.frames.length);
 }
 
 function setAnimating(on) {
   clearInterval(radar.timer);
   radar.timer = null;
-  if (on && radar.layers.length > 1) radar.timer = setInterval(tick, ANIMATION_MS);
-  else if (radar.layers.length) {
-    radar.index = radar.layers.length - 1;
-    showFrame(radar.index);
-  }
+  if (on && radar.frames.length > 1) radar.timer = setInterval(tick, ANIMATION_MS);
+  else if (radar.frames.length) showFrame(radar.frames.length - 1);
+}
+
+function setRadarVisible(on) {
+  radar.visible = on;
+  if (!radar.layer) return;
+  if (on) radar.layer.addTo(map);
+  else map.removeLayer(radar.layer);
 }
 
 async function loadRadar() {
   const data = await (await fetch(RAINVIEWER_INDEX)).json();
-  radar.frames = (data.radar.past || []).slice(-12);
-  radar.layers = radar.frames.map((f) => radarLayer(data.host, f).addTo(map));
-  showFrame(radar.layers.length - 1);
+  radar.host = data.host;
+  // Fewer frames on touch devices keeps the animation light on memory.
+  radar.frames = (data.radar.past || []).slice(IS_TOUCH ? -6 : -10);
+  if (!radar.frames.length) return;
+  radar.layer = L.tileLayer(frameUrl(radar.frames[radar.frames.length - 1]), {
+    opacity: 0.72,
+    zIndex: 400,
+    maxZoom: MAX_ZOOM,
+    maxNativeZoom: 10,
+    keepBuffer: 1,
+    updateWhenIdle: true,
+    updateWhenZooming: false,
+    attribution: '&copy; <a href="https://www.rainviewer.com/">RainViewer</a>',
+  });
+  if (radar.visible) radar.layer.addTo(map);
+  radar.index = radar.frames.length - 1;
   setAnimating(radar.animate);
 }
 
 document.getElementById("toggle-rain").addEventListener("change", (e) => {
-  radar.visible = e.target.checked;
-  showFrame(radar.index);
+  setRadarVisible(e.target.checked);
 });
 document.getElementById("toggle-anim").addEventListener("change", (e) => {
   radar.animate = e.target.checked;
@@ -240,6 +297,9 @@ document.querySelectorAll("[data-toggle-panel]").forEach((btn) => {
   });
 });
 
-loadFires().catch((err) => console.error("fires failed", err));
+loadFires().catch((err) => {
+  console.error("fires failed", err);
+  showBanner("Couldn't load fire data — retrying may help.");
+});
 loadSummary().catch((err) => console.error("summary failed", err));
 loadRadar().catch((err) => console.error("radar failed", err));
