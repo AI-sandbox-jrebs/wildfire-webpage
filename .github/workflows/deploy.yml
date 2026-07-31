@@ -8,7 +8,8 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  # write: the growth history is committed back so it accumulates across runs
+  contents: write
   pages: write
   id-token: write
 
@@ -24,8 +25,23 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Test derived figures
+        run: python -m unittest discover -s scripts -p 'test_*.py' -v
       - name: Refresh wildfire + rainfall data
         run: python scripts/fetch_data.py
+      # Growth is measured against snapshots from previous runs, so the history
+      # has to outlive the runner. [skip ci] stops this push re-triggering us.
+      - name: Persist growth history
+        if: github.ref == 'refs/heads/main'
+        run: |
+          if [[ -n "$(git status --porcelain data/history.json)" ]]; then
+            git config user.name  "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add data/history.json
+            git commit -m "data: record fire growth snapshot [skip ci]"
+            git pull --rebase --autostash origin main
+            git push
+          fi
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

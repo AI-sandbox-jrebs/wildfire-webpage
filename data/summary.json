@@ -1,9 +1,113 @@
 {
-  "generated": "2026-07-29T12:52:31+00:00",
-  "fire_count": 656,
-  "us_count": 229,
-  "total_acres": 4553572,
+  "generated": "2026-07-31T15:28:06+00:00",
+  "fire_count": 230,
+  "us_count": 230,
+  "total_acres": 3587725,
   "largest": "Morrill",
   "rainfall_sampled": 120,
-  "dry_fire_count": 65
+  "dry_fire_count": 81,
+  "aqi_sampled": 120,
+  "growth_measured": 0,
+  "history_since": "2026-07-31T15:16:12+00:00",
+  "growing_count": 0,
+  "acres_gained_24h": 0,
+  "smoke": {
+    "analysis_date": "2026-07-30",
+    "age_days": 1,
+    "city_count": 2475,
+    "population": 144052378,
+    "cities_by_density": {
+      "Light": 1539,
+      "Medium": 934,
+      "Heavy": 2
+    },
+    "population_by_density": {
+      "Light": 94262808,
+      "Medium": 49757029,
+      "Heavy": 32541
+    },
+    "top_cities": [
+      {
+        "name": "New York City",
+        "state": "NY",
+        "population": 8804190,
+        "density": "Light"
+      },
+      {
+        "name": "Chicago",
+        "state": "IL",
+        "population": 2664452,
+        "density": "Medium"
+      },
+      {
+        "name": "Houston",
+        "state": "TX",
+        "population": 2314157,
+        "density": "Light"
+      },
+      {
+        "name": "Philadelphia",
+        "state": "PA",
+        "population": 1573916,
+        "density": "Light"
+      },
+      {
+        "name": "San Antonio",
+        "state": "TX",
+        "population": 1526656,
+        "density": "Light"
+      },
+      {
+        "name": "Dallas",
+        "state": "TX",
+        "population": 1326087,
+        "density": "Light"
+      },
+      {
+        "name": "Jacksonville",
+        "state": "FL",
+        "population": 1009833,
+        "density": "Medium"
+      },
+      {
+        "name": "Fort Worth",
+        "state": "TX",
+        "population": 1008106,
+        "density": "Light"
+      },
+      {
+        "name": "Austin",
+        "state": "TX",
+        "population": 974447,
+        "density": "Light"
+      },
+      {
+        "name": "Columbus",
+        "state": "OH",
+        "population": 913175,
+        "density": "Medium"
+      },
+      {
+        "name": "Charlotte",
+        "state": "NC",
+        "population": 911311,
+        "density": "Light"
+      },
+      {
+        "name": "Indianapolis",
+        "state": "IN",
+        "population": 887642,
+        "density": "Medium"
+      }
+    ]
+  },
+  "sources": {
+    "wfigs": "ok",
+    "eonet": "failed: failed to fetch https://eonet.gsfc.nasa.gov/api/v3/events?category=wildfires&status=open&limit=1000: <urlopen error [Errno 101] Network is unreachable>",
+    "rainfall": "ok",
+    "air_quality": "ok",
+    "growth": "ok",
+    "smoke": "ok",
+    "smoke_impact": "ok"
+  }
 }

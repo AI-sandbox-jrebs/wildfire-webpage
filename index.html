@@ -15,7 +15,7 @@
 <nav class="chips" aria-label="Panel toggles">
   <button data-toggle-panel=".panel--head">Stats</button>
   <button data-toggle-panel=".panel--legend">Layers</button>
-  <button data-toggle-panel=".panel--list">Top fires</button>
+  <button data-toggle-panel=".panel--list">Fires</button>
 </nav>
 
 <header class="panel panel--head">
@@ -26,6 +26,17 @@
     <div><dt>Acres burning</dt><dd id="stat-acres">–</dd></div>
     <div><dt>Dry 7 days</dt><dd id="stat-dry">–</dd></div>
   </dl>
+  <div class="smoke-stat" id="smoke-stat" hidden>
+    <div class="smoke-stat__head">
+      <span class="smoke-stat__dot"></span>
+      <strong id="smoke-people">–</strong> people under smoke
+    </div>
+    <p class="smoke-stat__note" id="smoke-note">–</p>
+  </div>
+  <div class="growth-stat" id="growth-stat" hidden>
+    <strong id="growth-headline">–</strong>
+    <span id="growth-note" class="growth-stat__note"></span>
+  </div>
   <p class="updated">Data refreshed <span id="stat-updated">–</span></p>
 </header>
 
@@ -40,21 +51,34 @@
     <span class="rain-bar" aria-hidden="true"></span>
     <span class="legend-scale">light – heavy</span>
   </div>
+  <div class="legend-row">
+    <span class="legend-title">Smoke</span>
+    <span class="dots"><i class="smk smk--l"></i><i class="smk smk--m"></i><i class="smk smk--h"></i></span>
+    <span class="legend-scale">light – heavy</span>
+  </div>
+  <label class="toggle"><input type="checkbox" id="toggle-smoke" checked /> Smoke plumes</label>
   <label class="toggle"><input type="checkbox" id="toggle-rain" checked /> Rainfall radar</label>
   <label class="toggle"><input type="checkbox" id="toggle-anim" checked /> Animate last 2 h</label>
   <label class="toggle"><input type="checkbox" id="toggle-fires" checked /> Fires</label>
   <p class="radar-time">Radar frame <span id="radar-time">–</span></p>
 </section>
 
-<section class="panel panel--list" aria-label="Largest active fires">
-  <h2>Largest fires</h2>
+<section class="panel panel--list" aria-label="Active fires">
+  <div class="tabs" role="tablist">
+    <button role="tab" data-sort="acres" class="active" aria-selected="true">Largest</button>
+    <button role="tab" data-sort="growth" aria-selected="false">Fastest growing</button>
+  </div>
+  <p class="list-note" id="list-note" hidden></p>
   <ul id="fire-list"></ul>
 </section>
 
 <footer class="credit">
   Fires: <a href="https://data-nifc.opendata.arcgis.com/">NIFC WFIGS</a> &amp;
   <a href="https://eonet.gsfc.nasa.gov/">NASA EONET</a> · Rain radar:
-  <a href="https://www.rainviewer.com/">RainViewer</a> · Precip: <a href="https://open-meteo.com/">Open-Meteo</a>
+  <a href="https://www.rainviewer.com/">RainViewer</a> · Precip &amp; air quality:
+  <a href="https://open-meteo.com/">Open-Meteo</a> · Smoke:
+  <a href="https://www.ospo.noaa.gov/products/land/hms.html">NOAA HMS</a> · Cities:
+  <a href="https://www.geonames.org/">GeoNames</a>
 </footer>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

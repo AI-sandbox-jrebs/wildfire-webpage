@@ -10,7 +10,7 @@ echo "[rebuild] refreshing wildfire + rainfall data..."
 "$PY" scripts/fetch_data.py
 
 if [[ "${COMMIT_DATA:-0}" == "1" ]] && ! git diff --quiet -- data; then
-  git add data/fires.geojson data/summary.json
+  git add data/fires.geojson data/summary.json data/smoke.geojson data/history.json
   git commit -m "data: refresh wildfire + rainfall snapshot"
   echo "[rebuild] committed refreshed data"
 fi
