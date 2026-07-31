@@ -400,8 +400,13 @@ function setAnimating(on) {
 function setRadarVisible(on) {
   radar.visible = on;
   if (!radar.layer) return;
-  if (on) radar.layer.addTo(map);
-  else map.removeLayer(radar.layer);
+  if (on) {
+    radar.layer.addTo(map);
+    setAnimating(radar.animate);
+  } else {
+    setAnimating(false);
+    map.removeLayer(radar.layer);
+  }
 }
 
 async function loadRadar() {
@@ -416,7 +421,7 @@ async function loadRadar() {
     maxZoom: MAX_ZOOM,
     maxNativeZoom: 10,
     keepBuffer: 1,
-    updateWhenIdle: true,
+    updateWhenIdle: IS_TOUCH,
     updateWhenZooming: false,
     attribution: '&copy; <a href="https://www.rainviewer.com/">RainViewer</a>',
   });
@@ -446,7 +451,8 @@ document.getElementById("toggle-rain").addEventListener("change", (e) => {
 });
 document.getElementById("toggle-anim").addEventListener("change", (e) => {
   radar.animate = e.target.checked;
-  setAnimating(radar.animate);
+  if (radar.visible) setAnimating(radar.animate);
+  else if (!radar.animate) setAnimating(false);
 });
 document.getElementById("toggle-fires").addEventListener("change", (e) => {
   if (e.target.checked) fireLayer.addTo(map);
