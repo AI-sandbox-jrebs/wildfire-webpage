@@ -403,6 +403,290 @@ async function loadUpdates() {
   }
 }
 
+/* ---- long-term history view ---- */
+let historyPromise = null;
+const SVG_NS = "http://www.w3.org/2000/svg";
+
+function svgNode(tag, attrs) {
+  const node = document.createElementNS(SVG_NS, tag);
+  Object.entries(attrs || {}).forEach(([key, value]) => node.setAttribute(key, value));
+  return node;
+}
+
+function historySeries(data, key) {
+  return data.series && data.series[key] && data.series[key].records
+    ? data.series[key].records
+    : null;
+}
+
+function formatHistoryNumber(value, decimals = 0) {
+  if (value === null || value === undefined || Number.isNaN(value)) return "Unavailable";
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: decimals }).format(value);
+}
+
+function makeHistoryChart(targetId, config, records, selectedYear) {
+  const target = document.getElementById(targetId);
+  target.replaceChildren();
+  const card = document.createElement("article");
+  card.className = `history-chart${config.wide ? " history-chart--wide" : ""}`;
+  card.append(textNode("h2", "", config.title), textNode("p", "history-chart__note", config.note));
+  if (!records || !records.length) {
+    card.append(textNode("p", "history-unavailable", "This series is currently unavailable."));
+    target.append(card);
+    return;
+  }
+
+  const values = records.map((record) => Number(config.value(record)));
+  const finite = values.filter(Number.isFinite);
+  const min = config.zero ? 0 : Math.min(0, ...finite);
+  const max = Math.max(1, ...finite);
+  const width = 760;
+  const height = 190;
+  const left = 38;
+  const right = 8;
+  const top = 12;
+  const bottom = 28;
+  const plotWidth = width - left - right;
+  const plotHeight = height - top - bottom;
+  const svg = svgNode("svg", {
+    viewBox: `0 0 ${width} ${height}`,
+    role: "img",
+    "aria-label": config.aria,
+  });
+  const title = svgNode("title");
+  title.textContent = config.title;
+  const desc = svgNode("desc");
+  desc.textContent = config.aria;
+  svg.append(title, desc);
+  [0, 0.5, 1].forEach((fraction) => {
+    const y = top + plotHeight * fraction;
+    svg.append(svgNode("line", { x1: left, x2: width - right, y1: y, y2: y, class: "gridline" }));
+    const label = svgNode("text", { x: left - 6, y: y + 3, "text-anchor": "end" });
+    label.textContent = formatHistoryNumber(max - (max - min) * fraction, config.decimals || 0);
+    svg.append(label);
+  });
+  svg.append(svgNode("line", { x1: left, x2: width - right, y1: top + plotHeight, y2: top + plotHeight, class: "axis" }));
+
+  const xFor = (index) => left + (records.length === 1 ? plotWidth / 2 : (index / (records.length - 1)) * plotWidth);
+  const yFor = (value) => top + ((max - value) / (max - min || 1)) * plotHeight;
+  if (config.type === "bar") {
+    const barWidth = Math.max(2, plotWidth / records.length - 1.5);
+    records.forEach((record, index) => {
+      const value = values[index];
+      if (!Number.isFinite(value)) return;
+      const x = xFor(index) - barWidth / 2;
+      const y = yFor(value);
+      const rect = svgNode("rect", {
+        x, y, width: barWidth, height: Math.max(1, top + plotHeight - y),
+        class: `bar ${config.primary ? "bar--primary" : ""}${record.year === selectedYear ? " bar--selected" : ""}`,
+      });
+      if (config.flag && record.count_flag) rect.setAttribute("opacity", "0.35");
+      svg.append(rect);
+    });
+  } else {
+    const points = records.map((record, index) => `${xFor(index)},${yFor(values[index])}`).join(" ");
+    svg.append(svgNode("polyline", { points, class: `line ${config.lineClass || ""}` }));
+    records.forEach((record, index) => {
+      if (!Number.isFinite(values[index]) || record.year !== selectedYear) return;
+      svg.append(svgNode("circle", { cx: xFor(index), cy: yFor(values[index]), r: 4, class: "point point--selected" }));
+    });
+  }
+  const first = svgNode("text", { x: left, y: height - 7 });
+  first.textContent = records[0].year;
+  const last = svgNode("text", { x: width - right, y: height - 7, "text-anchor": "end" });
+  last.textContent = records[records.length - 1].year;
+  svg.append(first, last);
+  if (config.flag) {
+    const flag = svgNode("text", { x: xFor(0), y: top - 1, class: "selected" });
+    flag.textContent = "1983–84 counts flagged";
+    svg.append(flag);
+  }
+  card.append(svg);
+  target.append(card);
+}
+
+function renderHistoryYear(data, year) {
+  const context = data.derived && data.derived.year_context
+    ? data.derived.year_context[String(year)]
+    : null;
+  document.getElementById("history-year-value").textContent = year;
+  const facts = document.getElementById("history-year-facts");
+  facts.replaceChildren();
+  [
+    ["Fires", context && context.fires !== undefined ? formatHistoryNumber(context.fires) : null, context && context.count_flag ? "early count flagged" : ""],
+    ["Acres burned", context && context.acres !== undefined ? `${formatHistoryNumber(context.acres)} ac` : null, context && context.acre_rank ? `#${context.acre_rank} by acres` : ""],
+    ["Average fire size", context && context.acres_per_fire ? `${formatHistoryNumber(context.acres_per_fire, 1)} ac` : null, ""],
+    ["Precipitation", context && context.precipitation !== undefined ? `${formatHistoryNumber(context.precipitation, 2)} in` : null, context && context.precipitation_anomaly !== undefined ? `${context.precipitation_anomaly >= 0 ? "+" : ""}${formatHistoryNumber(context.precipitation_anomaly, 2)} vs baseline` : ""],
+    ["USDM D1+", context && context.drought !== undefined ? `${formatHistoryNumber(context.drought, 1)}%` : null, "annual weekly mean"],
+  ].forEach(([label, value, note]) => {
+    const fact = document.createElement("div");
+    fact.className = "history-fact";
+    fact.append(textNode("span", "history-fact__label", label), textNode("strong", "history-fact__value", value || "Unavailable"));
+    if (note) fact.append(textNode("small", "history-fact__note", note));
+    facts.append(fact);
+  });
+}
+
+function renderHistorySources(data) {
+  const list = document.getElementById("history-source-list");
+  list.replaceChildren();
+  Object.entries(data.sources || {}).forEach(([key, sourceStatus]) => {
+    const metadata = sourceStatus.metadata || (data.series && data.series[key] && data.series[key].metadata) || {};
+    const source = document.createElement("article");
+    source.className = "history-source";
+    const title = textNode("h3", "", metadata.name || key);
+    const status = sourceStatus.status === "failed"
+      ? " · refresh failed; showing last good copy"
+      : "";
+    title.append(textNode("span", "history-source__status", status));
+    source.append(title);
+    source.append(textNode("p", "", `${metadata.coverage_start}–${metadata.coverage_end} · ${metadata.units} · ${metadata.geography}`));
+    source.append(textNode("p", "", `${metadata.aggregation}${metadata.baseline ? ` Baseline: ${metadata.baseline_period} mean (${metadata.baseline} in).` : ""}`));
+    if (metadata.url) source.append(textNode("p", "", `Data URL: ${metadata.url}`));
+    const link = document.createElement("a");
+    link.href = metadata.landing_page;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = "Official source and documentation";
+    source.append(link);
+    const caveats = document.createElement("ul");
+    (metadata.caveats || []).forEach((caveat) => caveats.append(textNode("li", "", caveat)));
+    source.append(caveats);
+    list.append(source);
+  });
+}
+
+const HISTORY_CHARTS = [
+  {
+    id: "history-chart-acres",
+    series: "nifc",
+    title: "Acres burned per year",
+    note: "NIFC national total; acreage is the more comparable long-run signal.",
+    type: "bar",
+    primary: true,
+    zero: true,
+    wide: true,
+    value: (record) => record.acres,
+    aria: "Annual NIFC acres burned, with the largest years clustered after 2000.",
+  },
+  {
+    id: "history-chart-size",
+    series: "nifc",
+    title: "Average fire size",
+    note: "NIFC acres divided by fires; 1983–84 are excluded from this count-based measure.",
+    type: "line",
+    zero: true,
+    lineClass: "line--warm",
+    wide: true,
+    value: (record) => record.acres_per_fire,
+    aria: "Average acres per fire rises substantially in the recent record.",
+  },
+  {
+    id: "history-chart-fires",
+    series: "nifc",
+    title: "Fires per year",
+    note: "NIFC counts; 1983–84 are visibly flagged for incomplete reporting.",
+    type: "bar",
+    zero: true,
+    flag: true,
+    value: (record) => record.fires,
+    aria: "Annual fire counts are flat to lower than the 1990s after excluding incomplete 1983–84 counts.",
+  },
+  {
+    id: "history-chart-precipitation",
+    series: "noaa_pcp",
+    title: "Annual precipitation anomaly",
+    note: "NOAA CONUS January–December precipitation minus the full-record mean baseline.",
+    type: "line",
+    value: (record) => record.anomaly,
+    aria: "Annual contiguous US precipitation anomaly relative to the full-record mean.",
+  },
+  {
+    id: "history-chart-temperature",
+    series: "noaa_tavg",
+    title: "Average temperature",
+    note: "NOAA CONUS January–December average temperature.",
+    type: "line",
+    lineClass: "line--warm",
+    value: (record) => record.value,
+    aria: "Annual contiguous US average temperature over the NOAA record.",
+  },
+  {
+    id: "history-chart-drought",
+    series: "usdm",
+    title: "US area in D1+ drought",
+    note: "US Drought Monitor annual mean of weekly D1-or-worse values.",
+    type: "line",
+    lineClass: "line--dry",
+    zero: true,
+    value: (record) => record.value,
+    aria: "Annual mean percent of contiguous US area in D1 or worse drought over the USDM record.",
+  },
+  {
+    id: "history-chart-mtbs",
+    series: "mtbs",
+    title: "MTBS mapped burned area",
+    note: "Separate mapped product; do not add this series to NIFC totals.",
+    type: "bar",
+    zero: true,
+    value: (record) => record.acres,
+    aria: "Annual mapped burned area from MTBS, presented separately from NIFC all-fire totals.",
+  },
+];
+
+function drawHistoryCharts(data, selectedYear) {
+  HISTORY_CHARTS.forEach((config) => {
+    makeHistoryChart(config.id, config, historySeries(data, config.series), selectedYear);
+  });
+}
+
+function renderHistory(data) {
+  const derived = data.derived;
+  const verdict = document.getElementById("history-verdict");
+  if (!derived) {
+    verdict.textContent = "The long-term comparison is not available yet.";
+    return;
+  }
+  verdict.textContent =
+    `Fire numbers are not rising: the annual average fell from ${formatHistoryNumber(derived.early_count_average)} fires in ${derived.early_count_label} to ${formatHistoryNumber(derived.recent_count_average)} in ${derived.recent_count_label}. ` +
+    `But the average fire grew from ${formatHistoryNumber(derived.early_acres_per_fire, 1)} to ${formatHistoryNumber(derived.recent_acres_per_fire, 1)} acres — ${formatHistoryNumber(derived.recent_size_multiplier, 1)}× larger — and ${derived.top_10_sentence.toLowerCase()}.`;
+  document.getElementById("history-caveat").textContent = derived.count_comparison_note;
+  const nifc = historySeries(data, "nifc");
+  const yearInput = document.getElementById("history-year");
+  yearInput.min = nifc ? nifc[0].year : 1983;
+  yearInput.max = nifc ? nifc[nifc.length - 1].year : 2025;
+  const selectedYear = Math.max(Number(yearInput.min), Math.min(Number(yearInput.max), Number(yearInput.value)));
+  yearInput.value = selectedYear;
+  renderHistoryYear(data, selectedYear);
+  drawHistoryCharts(data, selectedYear);
+  renderHistorySources(data);
+  yearInput.oninput = () => {
+    const year = Number(yearInput.value);
+    renderHistoryYear(data, year);
+    drawHistoryCharts(data, year);
+  };
+}
+
+async function loadHistory() {
+  if (!historyPromise) {
+    historyPromise = fetch(`data/longterm.json?v=${Date.now()}`).then((res) => {
+      if (!res.ok) throw new Error(`long-term history request failed: ${res.status}`);
+      return res.json();
+    }).then((data) => {
+      renderHistory(data);
+      return data;
+    });
+  }
+  try {
+    await historyPromise;
+  } catch (err) {
+    console.error("history failed", err);
+    const status = document.getElementById("history-status");
+    status.hidden = false;
+    status.textContent = "Long-term history is temporarily unavailable. The live map and Updates view are still available.";
+  }
+}
+
 /* ---- smoke plumes (NOAA HMS, refreshed at build time) ---- */
 const SMOKE_STYLE = {
   Light: { color: "#cfd8e3", fillOpacity: 0.1, weight: 0.5 },
@@ -550,6 +834,7 @@ document.querySelectorAll("[data-toggle-panel]").forEach((btn) => {
 const VIEW_DEFS = [
   { id: "now", hash: "", onEnter: () => requestAnimationFrame(() => map.invalidateSize()) },
   { id: "updates", hash: "updates", onEnter: loadUpdates },
+  { id: "then-vs-now", hash: "then-vs-now", onEnter: loadHistory },
 ];
 const viewByHash = new Map(VIEW_DEFS.map((view) => [view.hash, view]));
 let activeView = null;
@@ -563,6 +848,8 @@ function applyView(view) {
   document.body.dataset.view = view.id;
   const updates = document.getElementById("updates-view");
   updates.hidden = view.id !== "updates";
+  const history = document.getElementById("history-view");
+  history.hidden = view.id !== "then-vs-now";
   document.querySelectorAll(".view-nav [data-view]").forEach((button) => {
     const current = button.dataset.view === view.id;
     button.setAttribute("aria-current", current ? "page" : "false");

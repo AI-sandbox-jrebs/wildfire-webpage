@@ -15,6 +15,7 @@
 <nav class="view-nav" aria-label="Site views">
   <a href="#/" data-view="now" aria-current="page">Now</a>
   <a href="#/updates" data-view="updates">Updates</a>
+  <a href="#/then-vs-now" data-view="then-vs-now">Then vs Now</a>
 </nav>
 
 <nav class="chips" aria-label="Panel toggles">
@@ -94,6 +95,44 @@
     </p>
     <div id="updates-status" class="updates-status" role="status" hidden></div>
     <div id="updates-list" class="updates-list"></div>
+  </div>
+</main>
+
+<main id="history-view" class="history-view" aria-labelledby="history-title" hidden>
+  <div class="history-view__inner">
+    <p class="eyebrow">Long view</p>
+    <h1 id="history-title">Then vs Now</h1>
+    <p id="history-verdict" class="history-verdict"></p>
+    <p id="history-caveat" class="history-caveat"></p>
+
+    <section class="history-year" aria-labelledby="history-year-title">
+      <div class="history-year__head">
+        <div>
+          <p class="eyebrow">Year scrubber</p>
+          <h2 id="history-year-title">See one year in context</h2>
+        </div>
+        <output id="history-year-value" for="history-year">–</output>
+      </div>
+      <input id="history-year" type="range" min="1983" max="2025" value="2025" step="1" aria-label="Select a year">
+      <div id="history-year-facts" class="history-year__facts"></div>
+    </section>
+
+    <section class="history-charts" aria-label="Historical charts">
+      <div id="history-chart-acres"></div>
+      <div id="history-chart-size"></div>
+      <div id="history-chart-fires"></div>
+      <div id="history-chart-precipitation"></div>
+      <div id="history-chart-temperature"></div>
+      <div id="history-chart-drought"></div>
+      <div id="history-chart-mtbs"></div>
+    </section>
+
+    <section class="history-sources" aria-labelledby="history-sources-title">
+      <p class="eyebrow">Review the record</p>
+      <h2 id="history-sources-title">Sources and limits</h2>
+      <div id="history-source-list"></div>
+    </section>
+    <div id="history-status" class="updates-status" role="status" hidden></div>
   </div>
 </main>
 
