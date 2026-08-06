@@ -698,6 +698,13 @@ def main():
         else:
             print(f"points: unavailable ({exc}); no previous point file", file=sys.stderr)
             return 1
+    try:
+        from verify_data import write_verification
+
+        verification = write_verification(DATA_DIR, now=datetime.fromisoformat(now))
+        print(f"verification: {verification['summary']}")
+    except Exception as exc:  # noqa: BLE001 - verification must not break publishing
+        print(f"verification unavailable: {exc}", file=sys.stderr)
     print(json.dumps(output, indent=2))
     return 0
 

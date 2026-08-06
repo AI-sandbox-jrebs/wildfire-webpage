@@ -40,6 +40,7 @@ HISTORY_MAX_AGE_DAYS = 45
 MIN_ACRES = 10
 
 RAINFALL_SAMPLE_LIMIT = 120
+WFIGS_REPORTED_COUNT = None
 
 
 RATE_LIMIT_BACKOFF_S = 65
@@ -97,7 +98,9 @@ def wfigs_expected_count():
 def fetch_wfigs():
     # The service can silently return a short page when it is under load, so we
     # ask how many records should exist and verify we actually got them.
+    global WFIGS_REPORTED_COUNT
     expected = wfigs_expected_count()
+    WFIGS_REPORTED_COUNT = expected
     features = []
     offset = 0
     while True:
@@ -616,6 +619,12 @@ def main():
     summary = {
         "generated": collection["generated"],
         "fire_count": len(features),
+        "wfigs_reported_count": WFIGS_REPORTED_COUNT,
+        "wfigs_count_check": {
+            "source_total": WFIGS_REPORTED_COUNT,
+            "fetched_count": len(features),
+            "status": "pass" if WFIGS_REPORTED_COUNT == len(features) else "fail",
+        },
         "us_count": sum(1 for f in features if f["properties"]["source"] == "WFIGS"),
         "total_acres": round(sum(acres)),
         "largest": max(
@@ -632,6 +641,13 @@ def main():
         "sources": status,
     }
     (DATA_DIR / "summary.json").write_text(json.dumps(summary, indent=2))
+    try:
+        from verify_data import write_verification
+
+        verification = write_verification(DATA_DIR, now)
+        print(f"verification: {verification['summary']}")
+    except Exception as exc:  # noqa: BLE001 - verification must not break publishing
+        print(f"verification unavailable: {exc}", file=sys.stderr)
     print(json.dumps(summary, indent=2))
     return 0
 

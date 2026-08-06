@@ -21,6 +21,15 @@ Its geographic map uses the compact, per-year MTBS wildfire centroids in
 all-fire totals. Historical data is optional for deployment: a stale or
 unavailable refresh does not prevent the normal map from building.
 
+The **Updates** view also publishes `data/verification.json`, a build-time
+report of machine-checkable comparisons over the generated data. Each result
+includes the values compared and clickable source URLs so readers can rerun
+the relevant query. These checks can expose internal inconsistency, malformed
+values, missing provenance, and stale data; they do not certify that an
+upstream source or our interpretation is correct. This is an AI-built site:
+figures are machine-generated from public federal sources, and corrections
+are recorded in the public Updates log.
+
 ## Data
 
 | Layer | Source | Refreshed |
@@ -81,6 +90,12 @@ Additional guards:
   its previous good series and records its status in `data/longterm.json`.
 - The historical MTBS point file is refreshed with the same guarded weekly job;
   a short or failed point response never replaces a good `data/fire_years.json`.
+- Build-time verification results are written to `data/verification.json`;
+  verification failures remain visible on Updates rather than silently
+  making the page look clean.
+- The MTBS/NIFC comparison is calibrated for the products' different
+  measurement methods: modest MTBS excess can be legitimate, while unusually
+  large or widespread excess is flagged as a contamination signal.
 
 ## Rebuild
 

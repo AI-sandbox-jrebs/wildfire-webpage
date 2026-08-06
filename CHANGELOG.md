@@ -2,6 +2,35 @@
 
 Public record of changes to Wildfire & Rainfall Watch.
 
+## Published machine-checkable data verification
+
+**2026-08-06 · improvement**
+
+The Updates view now shows the checks we run over the generated data, the values compared, and links to the source queries a reader can rerun.
+
+What changed:
+- Checks cover cross-source acreage comparisons, wildfire-only MTBS filtering, provisional-year recency, current-fire counts, drought ranges, coverage gaps, plausible values, provenance, and freshness.
+- The results are diagnostic rather than a certification: they can catch internal inconsistency and malformed values, but they cannot prove that an upstream source or our interpretation is correct.
+- This site is AI-built and its corrections are logged publicly, including the stale EONET records, prescribed-fire contamination, and MTBS assessment-lag fixes.
+
+> Note: A failed or flagged check is shown rather than hidden; source links point to the query or data endpoint used for the comparison.
+
+---
+
+## Calibrated the MTBS cross-source verification check
+
+**2026-08-06 · correction**
+
+The MTBS/NIFC comparison now allows modest measurement differences while still detecting the larger and repeated excess pattern caused by the former all-fire-types query.
+
+What changed:
+- MTBS maps perimeter footprints, which can include unburned inclusions, while NIFC reports incident acreage; the products are not strict subsets.
+- The check now flags unusually large single-year excess or excess across too many years. The wildfire-only generated history passes this calibrated check, while the former all-fire-types result would have failed it.
+
+> Note: The source-method caveat is part of the check description shown on Updates.
+
+---
+
 ## Removed prescribed burns from the mapped burned-area history
 
 **2026-08-06 · correction**

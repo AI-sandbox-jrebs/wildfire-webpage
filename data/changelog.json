@@ -1,6 +1,29 @@
 [
   {
     "date": "2026-08-06",
+    "kind": "improvement",
+    "title": "Published machine-checkable data verification",
+    "summary": "The Updates view now shows the checks we run over the generated data, the values compared, and links to the source queries a reader can rerun.",
+    "details": [
+      "Checks cover cross-source acreage comparisons, wildfire-only MTBS filtering, provisional-year recency, current-fire counts, drought ranges, coverage gaps, plausible values, provenance, and freshness.",
+      "The results are diagnostic rather than a certification: they can catch internal inconsistency and malformed values, but they cannot prove that an upstream source or our interpretation is correct.",
+      "This site is AI-built and its corrections are logged publicly, including the stale EONET records, prescribed-fire contamination, and MTBS assessment-lag fixes."
+    ],
+    "note": "A failed or flagged check is shown rather than hidden; source links point to the query or data endpoint used for the comparison."
+  },
+  {
+    "date": "2026-08-06",
+    "kind": "correction",
+    "title": "Calibrated the MTBS cross-source verification check",
+    "summary": "The MTBS/NIFC comparison now allows modest measurement differences while still detecting the larger and repeated excess pattern caused by the former all-fire-types query.",
+    "details": [
+      "MTBS maps perimeter footprints, which can include unburned inclusions, while NIFC reports incident acreage; the products are not strict subsets.",
+      "The check now flags unusually large single-year excess or excess across too many years. The wildfire-only generated history passes this calibrated check, while the former all-fire-types result would have failed it."
+    ],
+    "note": "The source-method caveat is part of the check description shown on Updates."
+  },
+  {
+    "date": "2026-08-06",
     "kind": "correction",
     "title": "Removed prescribed burns from the mapped burned-area history",
     "summary": "Our MTBS burned-area chart was counting deliberately-set prescribed burns as wildfires. This is the same mistake we had just corrected in the current-fire totals, made one layer down in the historical data.",

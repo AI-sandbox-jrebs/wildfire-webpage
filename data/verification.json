@@ -1,0 +1,467 @@
+{
+  "generated": "2026-08-06T19:52:17+00:00",
+  "summary": {
+    "pass": 12,
+    "flag": 2,
+    "fail": 0
+  },
+  "checks": [
+    {
+      "id": "mtbs-excess-calibration",
+      "description": "MTBS sums satellite-mapped fire perimeters, which can enclose unburned patches, while NIFC sums acreage reported by incident. A modest excess is therefore expected; a large one, or many years drifting high at once, means something other than wildfire is being counted.",
+      "status": "pass",
+      "actual": {
+        "comparisons": [
+          {
+            "year": 1984,
+            "mtbs_acres": 984115,
+            "nifc_acres": 1148409,
+            "excess_ratio": -0.1431
+          },
+          {
+            "year": 1985,
+            "mtbs_acres": 2127242,
+            "nifc_acres": 2896147,
+            "excess_ratio": -0.2655
+          },
+          {
+            "year": 1986,
+            "mtbs_acres": 1364572,
+            "nifc_acres": 2719162,
+            "excess_ratio": -0.4982
+          },
+          {
+            "year": 1987,
+            "mtbs_acres": 2017956,
+            "nifc_acres": 2447296,
+            "excess_ratio": -0.1754
+          },
+          {
+            "year": 1988,
+            "mtbs_acres": 4268877,
+            "nifc_acres": 5009290,
+            "excess_ratio": -0.1478
+          },
+          {
+            "year": 1989,
+            "mtbs_acres": 1416876,
+            "nifc_acres": 1827310,
+            "excess_ratio": -0.2246
+          },
+          {
+            "year": 1990,
+            "mtbs_acres": 2474978,
+            "nifc_acres": 4621621,
+            "excess_ratio": -0.4645
+          },
+          {
+            "year": 1991,
+            "mtbs_acres": 1595015,
+            "nifc_acres": 2953578,
+            "excess_ratio": -0.46
+          },
+          {
+            "year": 1992,
+            "mtbs_acres": 1247421,
+            "nifc_acres": 2069929,
+            "excess_ratio": -0.3974
+          },
+          {
+            "year": 1993,
+            "mtbs_acres": 1265738,
+            "nifc_acres": 1797574,
+            "excess_ratio": -0.2959
+          },
+          {
+            "year": 1994,
+            "mtbs_acres": 2420042,
+            "nifc_acres": 4073579,
+            "excess_ratio": -0.4059
+          },
+          {
+            "year": 1995,
+            "mtbs_acres": 1145218,
+            "nifc_acres": 1840546,
+            "excess_ratio": -0.3778
+          },
+          {
+            "year": 1996,
+            "mtbs_acres": 4583581,
+            "nifc_acres": 6065998,
+            "excess_ratio": -0.2444
+          },
+          {
+            "year": 1997,
+            "mtbs_acres": 642274,
+            "nifc_acres": 2856959,
+            "excess_ratio": -0.7752
+          },
+          {
+            "year": 1998,
+            "mtbs_acres": 1479720,
+            "nifc_acres": 1329704,
+            "excess_ratio": 0.1128
+          },
+          {
+            "year": 1999,
+            "mtbs_acres": 4931180,
+            "nifc_acres": 5626093,
+            "excess_ratio": -0.1235
+          },
+          {
+            "year": 2000,
+            "mtbs_acres": 6002688,
+            "nifc_acres": 7393493,
+            "excess_ratio": -0.1881
+          },
+          {
+            "year": 2001,
+            "mtbs_acres": 2443075,
+            "nifc_acres": 3570911,
+            "excess_ratio": -0.3158
+          },
+          {
+            "year": 2002,
+            "mtbs_acres": 5793488,
+            "nifc_acres": 7184712,
+            "excess_ratio": -0.1936
+          },
+          {
+            "year": 2003,
+            "mtbs_acres": 3476560,
+            "nifc_acres": 3960842,
+            "excess_ratio": -0.1223
+          },
+          {
+            "year": 2004,
+            "mtbs_acres": 7619875,
+            "nifc_acres": 8097880,
+            "excess_ratio": -0.059
+          },
+          {
+            "year": 2005,
+            "mtbs_acres": 8367666,
+            "nifc_acres": 8689389,
+            "excess_ratio": -0.037
+          },
+          {
+            "year": 2006,
+            "mtbs_acres": 7539942,
+            "nifc_acres": 9873745,
+            "excess_ratio": -0.2364
+          },
+          {
+            "year": 2007,
+            "mtbs_acres": 7682337,
+            "nifc_acres": 9328045,
+            "excess_ratio": -0.1764
+          },
+          {
+            "year": 2008,
+            "mtbs_acres": 3684688,
+            "nifc_acres": 5292468,
+            "excess_ratio": -0.3038
+          },
+          {
+            "year": 2009,
+            "mtbs_acres": 3354435,
+            "nifc_acres": 5921786,
+            "excess_ratio": -0.4335
+          },
+          {
+            "year": 2010,
+            "mtbs_acres": 1893000,
+            "nifc_acres": 3422724,
+            "excess_ratio": -0.4469
+          },
+          {
+            "year": 2011,
+            "mtbs_acres": 7763249,
+            "nifc_acres": 8711367,
+            "excess_ratio": -0.1088
+          },
+          {
+            "year": 2012,
+            "mtbs_acres": 8391919,
+            "nifc_acres": 9326238,
+            "excess_ratio": -0.1002
+          },
+          {
+            "year": 2013,
+            "mtbs_acres": 3809080,
+            "nifc_acres": 4319546,
+            "excess_ratio": -0.1182
+          },
+          {
+            "year": 2014,
+            "mtbs_acres": 2653338,
+            "nifc_acres": 3595613,
+            "excess_ratio": -0.2621
+          },
+          {
+            "year": 2015,
+            "mtbs_acres": 9061371,
+            "nifc_acres": 10125149,
+            "excess_ratio": -0.1051
+          },
+          {
+            "year": 2016,
+            "mtbs_acres": 4246348,
+            "nifc_acres": 5509995,
+            "excess_ratio": -0.2293
+          },
+          {
+            "year": 2017,
+            "mtbs_acres": 8900137,
+            "nifc_acres": 10026086,
+            "excess_ratio": -0.1123
+          },
+          {
+            "year": 2018,
+            "mtbs_acres": 7404648,
+            "nifc_acres": 8767492,
+            "excess_ratio": -0.1554
+          },
+          {
+            "year": 2019,
+            "mtbs_acres": 4186941,
+            "nifc_acres": 4664364,
+            "excess_ratio": -0.1024
+          },
+          {
+            "year": 2020,
+            "mtbs_acres": 9646760,
+            "nifc_acres": 10122336,
+            "excess_ratio": -0.047
+          },
+          {
+            "year": 2021,
+            "mtbs_acres": 7069633,
+            "nifc_acres": 7125643,
+            "excess_ratio": -0.0079
+          },
+          {
+            "year": 2022,
+            "mtbs_acres": 6856430,
+            "nifc_acres": 7577183,
+            "excess_ratio": -0.0951
+          },
+          {
+            "year": 2023,
+            "mtbs_acres": 1969822,
+            "nifc_acres": 2693910,
+            "excess_ratio": -0.2688
+          },
+          {
+            "year": 2024,
+            "mtbs_acres": 6434143,
+            "nifc_acres": 8924884,
+            "excess_ratio": -0.2791
+          },
+          {
+            "year": 2025,
+            "mtbs_acres": 1128624,
+            "nifc_acres": 5131474,
+            "excess_ratio": -0.7801
+          }
+        ],
+        "exceeding_years": [
+          {
+            "year": 1998,
+            "mtbs_acres": 1479720,
+            "nifc_acres": 1329704,
+            "excess_ratio": 0.1128
+          }
+        ],
+        "extreme_years": [],
+        "excess_threshold": 0.2,
+        "max_excess_years": 3
+      },
+      "sources": [
+        "https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_MTBS_01/MapServer/63/query?where=fire_type%3D%27Wildfire%27+AND+year+%3C%3D+2025&outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22objectid%22%2C%22outStatisticFieldName%22%3A%22event_count%22%7D%2C%7B%22statisticType%22%3A%22sum%22%2C%22onStatisticField%22%3A%22acres%22%2C%22outStatisticFieldName%22%3A%22acres_sum%22%7D%5D&groupByFieldsForStatistics=year&orderByFields=year+ASC&returnGeometry=false&f=json",
+        "https://www.nifc.gov/fire-information/statistics/wildfires"
+      ]
+    },
+    {
+      "id": "mtbs-wildfire-only",
+      "description": "Published MTBS records are fetched with an explicit wildfire-only filter.",
+      "status": "pass",
+      "actual": {
+        "wildfire_filter_present": true,
+        "record_type": "Wildfire"
+      },
+      "sources": [
+        "https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_MTBS_01/MapServer/63/query?where=fire_type%3D%27Wildfire%27+AND+year+%3C%3D+2025&outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22objectid%22%2C%22outStatisticFieldName%22%3A%22event_count%22%7D%2C%7B%22statisticType%22%3A%22sum%22%2C%22onStatisticField%22%3A%22acres%22%2C%22outStatisticFieldName%22%3A%22acres_sum%22%7D%5D&groupByFieldsForStatistics=year&orderByFields=year+ASC&returnGeometry=false&f=json",
+        "https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_MTBS_01/MapServer/63/query?where=fire_type%3D%27Wildfire%27+AND+year+%3C%3D+2025&outFields=fire_name%2Cyear%2Cacres%2Clatitude%2Clongitude&orderByFields=objectid&returnGeometry=false&f=json"
+      ]
+    },
+    {
+      "id": "mtbs-provisional-recent",
+      "description": "MTBS provisional flags are limited to the newest assessment-lag window.",
+      "status": "pass",
+      "actual": {
+        "latest_nifc_year": 2025,
+        "provisional_years": [
+          2025
+        ],
+        "old_provisional_years": []
+      },
+      "sources": [
+        "https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_MTBS_01/MapServer/63/query?where=fire_type%3D%27Wildfire%27+AND+year+%3C%3D+2025&outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22objectid%22%2C%22outStatisticFieldName%22%3A%22event_count%22%7D%2C%7B%22statisticType%22%3A%22sum%22%2C%22onStatisticField%22%3A%22acres%22%2C%22outStatisticFieldName%22%3A%22acres_sum%22%7D%5D&groupByFieldsForStatistics=year&orderByFields=year+ASC&returnGeometry=false&f=json",
+        "https://www.nifc.gov/fire-information/statistics/wildfires"
+      ]
+    },
+    {
+      "id": "current-fire-count",
+      "description": "Current-fire count is compared with WFIGS's own reported total at build time.",
+      "status": "flag",
+      "actual": {
+        "published_count": 296,
+        "wfigs_reported_count": null
+      },
+      "sources": [
+        "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Incident_Locations_Current/FeatureServer/0/query?where=IncidentSize%3E%3D10+AND+IncidentTypeCategory%3D%27WF%27&returnCountOnly=true&f=json"
+      ]
+    },
+    {
+      "id": "drought-range",
+      "description": "Published drought percentages stay within 0\u2013100 percent.",
+      "status": "pass",
+      "actual": {
+        "invalid_records": [],
+        "record_count": 26
+      },
+      "sources": [
+        "https://usdmdataservices.unl.edu/api/USStatistics/GetBasicStatisticsByAreaPercent?aoi=CONUS&dx=1&DxLevelThresholdFrom=0&DxLevelThresholdTo=100&startdate=1%2F1%2F2000&enddate=12%2F31%2F2025&statisticsType=1"
+      ]
+    },
+    {
+      "id": "coverage-nifc",
+      "description": "nifc coverage years are contiguous with no gaps.",
+      "status": "pass",
+      "actual": {
+        "coverage_start": 1983,
+        "coverage_end": 2025,
+        "record_count": 43
+      },
+      "sources": [
+        "https://www.nifc.gov/fire-information/statistics/wildfires"
+      ]
+    },
+    {
+      "id": "coverage-noaa_pcp",
+      "description": "noaa_pcp coverage years are contiguous with no gaps.",
+      "status": "pass",
+      "actual": {
+        "coverage_start": 1895,
+        "coverage_end": 2025,
+        "record_count": 131
+      },
+      "sources": [
+        "https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/national/time-series/110/pcp/12/12/1895-2025.json"
+      ]
+    },
+    {
+      "id": "coverage-noaa_tavg",
+      "description": "noaa_tavg coverage years are contiguous with no gaps.",
+      "status": "pass",
+      "actual": {
+        "coverage_start": 1895,
+        "coverage_end": 2025,
+        "record_count": 131
+      },
+      "sources": [
+        "https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/national/time-series/110/tavg/12/12/1895-2025.json"
+      ]
+    },
+    {
+      "id": "coverage-noaa_zndx",
+      "description": "noaa_zndx coverage years are contiguous with no gaps.",
+      "status": "pass",
+      "actual": {
+        "coverage_start": 1895,
+        "coverage_end": 2025,
+        "record_count": 131
+      },
+      "sources": [
+        "https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/national/time-series/110/zndx/12/12/1895-2025.json"
+      ]
+    },
+    {
+      "id": "coverage-usdm",
+      "description": "usdm coverage years are contiguous with no gaps.",
+      "status": "pass",
+      "actual": {
+        "coverage_start": 2000,
+        "coverage_end": 2025,
+        "record_count": 26
+      },
+      "sources": [
+        "https://usdmdataservices.unl.edu/api/USStatistics/GetBasicStatisticsByAreaPercent?aoi=CONUS&dx=1&DxLevelThresholdFrom=0&DxLevelThresholdTo=100&startdate=1%2F1%2F2000&enddate=12%2F31%2F2025&statisticsType=1"
+      ]
+    },
+    {
+      "id": "coverage-mtbs",
+      "description": "mtbs coverage years are contiguous with no gaps.",
+      "status": "pass",
+      "actual": {
+        "coverage_start": 1984,
+        "coverage_end": 2025,
+        "record_count": 42
+      },
+      "sources": [
+        "https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_MTBS_01/MapServer/63/query?where=fire_type%3D%27Wildfire%27+AND+year+%3C%3D+2025&outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22objectid%22%2C%22outStatisticFieldName%22%3A%22event_count%22%7D%2C%7B%22statisticType%22%3A%22sum%22%2C%22onStatisticField%22%3A%22acres%22%2C%22outStatisticFieldName%22%3A%22acres_sum%22%7D%5D&groupByFieldsForStatistics=year&orderByFields=year+ASC&returnGeometry=false&f=json"
+      ]
+    },
+    {
+      "id": "plausible-values",
+      "description": "Published acreage, count, and percentage values are numeric and within broad plausible bounds.",
+      "status": "pass",
+      "actual": {
+        "invalid_values": []
+      },
+      "sources": [
+        "https://www.nifc.gov/fire-information/statistics/wildfires",
+        "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Incident_Locations_Current/FeatureServer/0/query?where=IncidentSize%3E%3D10+AND+IncidentTypeCategory%3D%27WF%27&returnCountOnly=true&f=json"
+      ]
+    },
+    {
+      "id": "source-provenance",
+      "description": "Every published historical source carries a rerunnable URL and last-success timestamp.",
+      "status": "pass",
+      "actual": {
+        "missing_sources": []
+      },
+      "sources": [
+        "https://www.nifc.gov/fire-information/statistics/wildfires",
+        "https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/national/time-series/110/pcp/12/12/1895-2025.json",
+        "https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/national/time-series/110/tavg/12/12/1895-2025.json",
+        "https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/national/time-series/110/zndx/12/12/1895-2025.json",
+        "https://usdmdataservices.unl.edu/api/USStatistics/GetBasicStatisticsByAreaPercent?aoi=CONUS&dx=1&DxLevelThresholdFrom=0&DxLevelThresholdTo=100&startdate=1%2F1%2F2000&enddate=12%2F31%2F2025&statisticsType=1",
+        "https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_MTBS_01/MapServer/63/query?where=fire_type%3D%27Wildfire%27+AND+year+%3C%3D+2025&outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22objectid%22%2C%22outStatisticFieldName%22%3A%22event_count%22%7D%2C%7B%22statisticType%22%3A%22sum%22%2C%22onStatisticField%22%3A%22acres%22%2C%22outStatisticFieldName%22%3A%22acres_sum%22%7D%5D&groupByFieldsForStatistics=year&orderByFields=year+ASC&returnGeometry=false&f=json",
+        "https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_MTBS_01/MapServer/63/query?where=fire_type%3D%27Wildfire%27+AND+year+%3C%3D+2025&outFields=fire_name%2Cyear%2Cacres%2Clatitude%2Clongitude&orderByFields=objectid&returnGeometry=false&f=json"
+      ]
+    },
+    {
+      "id": "data-freshness",
+      "description": "Published data is not older than its expected refresh interval.",
+      "status": "flag",
+      "actual": {
+        "stale_sources": [
+          {
+            "source": "current",
+            "last_success": "2026-08-06T15:12:14+00:00"
+          }
+        ],
+        "expected_intervals": {
+          "current": "3 hours",
+          "history": "8 days"
+        }
+      },
+      "sources": [
+        "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Incident_Locations_Current/FeatureServer/0/query?where=IncidentSize%3E%3D10+AND+IncidentTypeCategory%3D%27WF%27&returnCountOnly=true&f=json"
+      ]
+    }
+  ],
+  "limitations": "These checks catch internal inconsistency and implausible values; they do not certify upstream sources or our interpretation."
+}

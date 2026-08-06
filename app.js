@@ -339,6 +339,7 @@ async function loadSummary() {
 
 /* ---- public updates view ---- */
 let changelogPromise = null;
+let verificationPromise = null;
 
 function textNode(tag, className, text) {
   const node = document.createElement(tag);
@@ -388,6 +389,190 @@ function renderUpdates(entries) {
   });
 }
 
+function renderVerification(result) {
+  const summary = document.getElementById("verification-summary");
+  const list = document.getElementById("verification-list");
+  list.replaceChildren();
+  if (result.error) {
+    summary.textContent = "Checks unavailable";
+    list.append(textNode("p", "verification-error", result.error));
+    return;
+  }
+  const counts = result.summary || {};
+  summary.replaceChildren(
+    textNode("strong", "verification-summary__headline", "Review status"),
+    textNode("span", "verification-summary__pass", `${counts.pass || 0} passed`),
+    textNode("span", "verification-summary__flag", `${counts.flag || 0} flagged`),
+    textNode("span", "verification-summary__fail", `${counts.fail || 0} failed`),
+  );
+  (result.checks || []).forEach((check) => {
+    const card = document.createElement("article");
+    card.className = `verification-check verification-check--${check.status}`;
+    const heading = document.createElement("div");
+    heading.className = "verification-check__head";
+    heading.append(
+      textNode("h3", "", verificationTitle(check)),
+      textNode("span", "verification-check__status", check.status),
+    );
+    card.append(heading);
+    card.append(textNode("p", "verification-check__description", check.description));
+    card.append(textNode("p", "verification-check__summary", verificationSummary(check)));
+    if (check.id === "mtbs-excess-calibration") card.append(verificationDetailsTable(check));
+    const sources = document.createElement("div");
+    sources.className = "verification-check__sources";
+    sources.append(textNode("span", "", "Sources:"));
+    (check.sources || []).filter(Boolean).forEach((url, index) => {
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("target", "_blank");
+      link.rel = "noopener noreferrer";
+      link.textContent = verificationSourceLabel(check, index);
+      sources.append(link);
+    });
+    card.append(sources);
+    list.append(card);
+  });
+}
+
+function verificationTitle(check) {
+  const titles = {
+    "mtbs-excess-calibration": "MTBS acreage stays within tolerance of NIFC",
+    "mtbs-wildfire-only": "MTBS records use the wildfire-only filter",
+    "mtbs-provisional-recent": "MTBS provisional flags are limited to recent years",
+    "current-fire-count": "Published current-fire count matches WFIGS at build time",
+    "drought-range": "Drought percentages stay within 0–100%",
+    "plausible-values": "Published values stay within plausible bounds",
+    "source-provenance": "Published sources include rerunnable URLs and timestamps",
+    "data-freshness": "Published data freshness is checked against refresh intervals",
+  };
+  if (titles[check.id]) return titles[check.id];
+  if (check.id.startsWith("coverage-")) {
+    const names = {
+      nifc: "NIFC annual statistics",
+      noaa_pcp: "NOAA precipitation",
+      noaa_tavg: "NOAA temperature",
+      noaa_zndx: "NOAA Palmer Z-Index",
+      usdm: "U.S. Drought Monitor",
+      mtbs: "MTBS mapped acreage",
+    };
+    return `${names[check.id.slice("coverage-".length)] || check.id.slice("coverage-".length)} coverage has no gaps`;
+  }
+  return check.description;
+}
+
+function formatVerificationNumber(value, decimals = 0) {
+  if (value === null || value === undefined || Number.isNaN(Number(value))) return "unavailable";
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: decimals }).format(Number(value));
+}
+
+function formatVerificationPercent(value) {
+  return `${(Number(value) * 100).toFixed(1)}%`;
+}
+
+function verificationSummary(check) {
+  const actual = check.actual || {};
+  if (check.id === "mtbs-excess-calibration") {
+    const comparisons = actual.comparisons || [];
+    const exceeding = actual.exceeding_years || [];
+    const largest = comparisons.reduce((best, item) => (
+      !best || item.excess_ratio > best.excess_ratio ? item : best
+    ), null);
+    return `Only ${exceeding.length} of ${comparisons.length} years exceeded NIFC; largest excess was ${largest ? `${largest.year} at ${formatVerificationPercent(largest.excess_ratio)}` : "unavailable"}. Tolerance: ${formatVerificationPercent(actual.excess_threshold)}.`;
+  }
+  if (check.id === "mtbs-wildfire-only") {
+    return actual.wildfire_filter_present ? "The published MTBS query includes fire_type='Wildfire'; no other fire types are included." : "The published MTBS query does not show the required wildfire-only filter.";
+  }
+  if (check.id === "mtbs-provisional-recent") {
+    return `${(actual.provisional_years || []).length} provisional year${(actual.provisional_years || []).length === 1 ? "" : "s"} published; ${actual.old_provisional_years?.length || 0} fall outside the recent assessment-lag window.`;
+  }
+  if (check.id === "current-fire-count") {
+    return actual.published_count === actual.wfigs_reported_count
+      ? `${formatVerificationNumber(actual.published_count)} fires fetched, matching WFIGS's reported total when this data was built.`
+      : `Published count: ${formatVerificationNumber(actual.published_count)}; WFIGS build-time total: ${formatVerificationNumber(actual.wfigs_reported_count)}.`;
+  }
+  if (check.id === "drought-range") {
+    return `${actual.invalid_records?.length || 0} invalid records among ${formatVerificationNumber(actual.record_count)} published drought values.`;
+  }
+  if (check.id.startsWith("coverage-")) {
+    return `${formatVerificationNumber(actual.record_count)} records from ${actual.coverage_start ?? "unavailable"} through ${actual.coverage_end ?? "unavailable"}.`;
+  }
+  if (check.id === "plausible-values") {
+    return `${actual.invalid_values?.length || 0} values outside the broad plausibility bounds.`;
+  }
+  if (check.id === "source-provenance") {
+    return actual.missing_sources?.length
+      ? `Missing provenance: ${actual.missing_sources.join(", ")}.`
+      : "Every published historical source has a rerunnable URL and last-success timestamp.";
+  }
+  if (check.id === "data-freshness") {
+    return actual.stale_sources?.length
+      ? `${actual.stale_sources.length} source${actual.stale_sources.length === 1 ? "" : "s"} older than the expected refresh interval.`
+      : "All sources are within their expected refresh intervals.";
+  }
+  return check.description;
+}
+
+function verificationSourceLabel(check, index) {
+  const labels = {
+    "mtbs-excess-calibration": ["MTBS wildfire query", "NIFC annual statistics table"],
+    "mtbs-wildfire-only": ["MTBS wildfire query", "MTBS points query"],
+    "mtbs-provisional-recent": ["MTBS wildfire query", "NIFC annual statistics table"],
+    "current-fire-count": ["WFIGS current-fire count query"],
+    "drought-range": ["U.S. Drought Monitor query"],
+    "plausible-values": ["NIFC annual statistics table", "WFIGS current-fire query"],
+    "data-freshness": ["WFIGS current-fire count query"],
+  };
+  if (labels[check.id]?.[index]) return labels[check.id][index];
+  if (check.id.startsWith("coverage-")) {
+    const names = {
+      nifc: "NIFC annual statistics table",
+      noaa_pcp: "NOAA precipitation query",
+      noaa_tavg: "NOAA temperature query",
+      noaa_zndx: "NOAA Palmer Z-Index query",
+      usdm: "U.S. Drought Monitor query",
+      mtbs: "MTBS wildfire query",
+    };
+    return names[check.id.slice("coverage-".length)] || "Source query";
+  }
+  if (check.id === "source-provenance") {
+    const names = [
+      "NIFC annual statistics table",
+      "NOAA precipitation query",
+      "NOAA temperature query",
+      "NOAA Palmer Z-Index query",
+      "U.S. Drought Monitor query",
+      "MTBS wildfire query",
+      "MTBS points query",
+    ];
+    return names[index] || `Published source ${index + 1}`;
+  }
+  return `Source ${index + 1}`;
+}
+
+function verificationDetailsTable(check) {
+  const details = document.createElement("details");
+  details.className = "verification-check__details";
+  const summary = document.createElement("summary");
+  summary.textContent = "Show all year-by-year comparisons";
+  details.append(summary);
+  const table = document.createElement("table");
+  table.className = "verification-check__table";
+  table.innerHTML = "<caption>MTBS and NIFC matching-year acreage</caption><thead><tr><th scope=\"col\">Year</th><th scope=\"col\">MTBS acres</th><th scope=\"col\">NIFC acres</th><th scope=\"col\">Excess</th></tr></thead>";
+  const body = document.createElement("tbody");
+  (check.actual?.comparisons || []).forEach((item) => {
+    const row = document.createElement("tr");
+    [item.year, formatVerificationNumber(item.mtbs_acres), formatVerificationNumber(item.nifc_acres), formatVerificationPercent(item.excess_ratio)].forEach((value) => {
+      const cell = document.createElement("td");
+      cell.textContent = value;
+      row.append(cell);
+    });
+    body.append(row);
+  });
+  table.append(body);
+  details.append(table);
+  return details;
+}
+
 async function loadUpdates() {
   if (!changelogPromise) {
     changelogPromise = fetch(`data/changelog.json?v=${Date.now()}`).then((res) => {
@@ -396,6 +581,19 @@ async function loadUpdates() {
     }).then((entries) => {
       renderUpdates(entries);
       return entries;
+    });
+  }
+  if (!verificationPromise) {
+    verificationPromise = fetch(`data/verification.json?v=${Date.now()}`).then((res) => {
+      if (!res.ok) throw new Error(`verification.json request failed: ${res.status}`);
+      return res.json();
+    }).then((result) => {
+      renderVerification(result);
+      return result;
+    }).catch((err) => {
+      renderVerification({ error: "Verification results are temporarily unavailable." });
+      console.error("verification failed", err);
+      return null;
     });
   }
   try {
