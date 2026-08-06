@@ -1,30 +1,30 @@
 {
-  "generated": "2026-07-31T15:28:06+00:00",
-  "fire_count": 230,
-  "us_count": 230,
-  "total_acres": 3587725,
-  "largest": "Morrill",
+  "generated": "2026-08-06T15:12:14+00:00",
+  "fire_count": 296,
+  "us_count": 296,
+  "total_acres": 3408702,
+  "largest": "Big Grass",
   "rainfall_sampled": 120,
-  "dry_fire_count": 81,
+  "dry_fire_count": 101,
   "aqi_sampled": 120,
-  "growth_measured": 0,
+  "growth_measured": 51,
   "history_since": "2026-07-31T15:16:12+00:00",
-  "growing_count": 0,
-  "acres_gained_24h": 0,
+  "growing_count": 31,
+  "acres_gained_24h": 224263,
   "smoke": {
-    "analysis_date": "2026-07-30",
+    "analysis_date": "2026-08-05",
     "age_days": 1,
-    "city_count": 2475,
-    "population": 144052378,
+    "city_count": 2536,
+    "population": 149115992,
     "cities_by_density": {
-      "Light": 1539,
-      "Medium": 934,
-      "Heavy": 2
+      "Light": 1169,
+      "Medium": 1230,
+      "Heavy": 137
     },
     "population_by_density": {
-      "Light": 94262808,
-      "Medium": 49757029,
-      "Heavy": 32541
+      "Light": 66927845,
+      "Medium": 74473871,
+      "Heavy": 7714276
     },
     "top_cities": [
       {
@@ -43,7 +43,7 @@
         "name": "Houston",
         "state": "TX",
         "population": 2314157,
-        "density": "Light"
+        "density": "Medium"
       },
       {
         "name": "Philadelphia",
@@ -55,31 +55,31 @@
         "name": "San Antonio",
         "state": "TX",
         "population": 1526656,
-        "density": "Light"
+        "density": "Medium"
       },
       {
         "name": "Dallas",
         "state": "TX",
         "population": 1326087,
-        "density": "Light"
+        "density": "Medium"
       },
       {
         "name": "Jacksonville",
         "state": "FL",
         "population": 1009833,
-        "density": "Medium"
+        "density": "Light"
       },
       {
         "name": "Fort Worth",
         "state": "TX",
         "population": 1008106,
-        "density": "Light"
+        "density": "Medium"
       },
       {
         "name": "Austin",
         "state": "TX",
         "population": 974447,
-        "density": "Light"
+        "density": "Medium"
       },
       {
         "name": "Columbus",
@@ -103,7 +103,6 @@
   },
   "sources": {
     "wfigs": "ok",
-    "eonet": "failed: failed to fetch https://eonet.gsfc.nasa.gov/api/v3/events?category=wildfires&status=open&limit=1000: <urlopen error [Errno 101] Network is unreachable>",
     "rainfall": "ok",
     "air_quality": "ok",
     "growth": "ok",

@@ -48,6 +48,7 @@ html, body {
 
 .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0; }
 .stats dt { color: var(--muted); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.07em; }
+.stats dt small { display: block; font-size: 8.5px; line-height: 1.15; letter-spacing: 0; text-transform: none; white-space: nowrap; }
 .stats dd { margin: 2px 0 0; font-size: 19px; font-weight: 650; font-variant-numeric: tabular-nums; }
 .updated { margin: 12px 0 0; font-size: 11.5px; color: var(--muted); }
 

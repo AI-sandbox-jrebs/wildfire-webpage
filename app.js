@@ -189,7 +189,7 @@ function popupHtml(p) {
   }
   return `<div class="pop">
     <h3>${p.name}</h3>
-    <div class="where">${p.state ? p.state + " · " : ""}${p.source === "WFIGS" ? "NIFC incident" : "NASA EONET event"}</div>
+    <div class="where">${p.state ? p.state + " · " : ""}NIFC incident</div>
     ${growthSummary(p)}
     ${growthChart(p.growth)}
     ${aqiHtml}
@@ -303,6 +303,8 @@ async function loadSummary() {
   document.getElementById("stat-acres").textContent =
     s.total_acres >= 1e6 ? `${(s.total_acres / 1e6).toFixed(1)}M` : nf.format(s.total_acres);
   document.getElementById("stat-dry").textContent = nf.format(s.dry_fire_count);
+  document.getElementById("stat-dry-scope").textContent =
+    `of ${nf.format(s.rainfall_sampled)} largest fires`;
   document.getElementById("stat-updated").textContent = new Date(s.generated).toLocaleString();
 
   if (s.smoke && s.smoke.city_count) {

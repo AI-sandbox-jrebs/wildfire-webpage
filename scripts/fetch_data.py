@@ -2,12 +2,10 @@
 
 Sources (all keyless):
   - NIFC WFIGS current incident locations (US, ArcGIS REST)
-  - NASA EONET open wildfire events (global)
   - Open-Meteo (recent + forecast precipitation at each fire)
 """
 
 import json
-import math
 import pathlib
 import sys
 import time
@@ -22,7 +20,6 @@ WFIGS_URL = (
     "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/"
     "WFIGS_Incident_Locations_Current/FeatureServer/0/query"
 )
-EONET_URL = "https://eonet.gsfc.nasa.gov/api/v3/events"
 OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast"
 AIR_QUALITY_URL = "https://air-quality-api.open-meteo.com/v1/air-quality"
 HMS_SMOKE_URL = (
@@ -37,22 +34,8 @@ GROWTH_WINDOW_MAX_HOURS = 36
 HISTORY_MAX_POINTS = 120
 HISTORY_MAX_AGE_DAYS = 45
 
-MIN_ACRES = 100
+MIN_ACRES = 10
 
-US_STATES = {
-    "Alabama": "AL", "Alaska": "AK", "Arizona": "AZ", "Arkansas": "AR", "California": "CA",
-    "Colorado": "CO", "Connecticut": "CT", "Delaware": "DE", "Florida": "FL", "Georgia": "GA",
-    "Hawaii": "HI", "Idaho": "ID", "Illinois": "IL", "Indiana": "IN", "Iowa": "IA",
-    "Kansas": "KS", "Kentucky": "KY", "Louisiana": "LA", "Maine": "ME", "Maryland": "MD",
-    "Massachusetts": "MA", "Michigan": "MI", "Minnesota": "MN", "Mississippi": "MS",
-    "Missouri": "MO", "Montana": "MT", "Nebraska": "NE", "Nevada": "NV",
-    "New Hampshire": "NH", "New Jersey": "NJ", "New Mexico": "NM", "New York": "NY",
-    "North Carolina": "NC", "North Dakota": "ND", "Ohio": "OH", "Oklahoma": "OK",
-    "Oregon": "OR", "Pennsylvania": "PA", "Rhode Island": "RI", "South Carolina": "SC",
-    "South Dakota": "SD", "Tennessee": "TN", "Texas": "TX", "Utah": "UT", "Vermont": "VT",
-    "Virginia": "VA", "Washington": "WA", "West Virginia": "WV", "Wisconsin": "WI",
-    "Wyoming": "WY",
-}
 RAINFALL_SAMPLE_LIMIT = 120
 
 
@@ -172,55 +155,6 @@ def fetch_wfigs():
             }
         )
     return out
-
-
-def fetch_eonet():
-    data = get_json(EONET_URL, {"category": "wildfires", "status": "open", "limit": 1000})
-    out = []
-    for event in data.get("events", []):
-        geoms = [g for g in event.get("geometry", []) if g.get("type") == "Point"]
-        if not geoms:
-            continue
-        latest = geoms[-1]
-        lon, lat = (latest["coordinates"] + [None, None])[:2]
-        if not valid_coords(lon, lat):
-            continue
-        acres = latest.get("magnitudeValue") if latest.get("magnitudeUnit") == "acres" else None
-        out.append(
-            {
-                "type": "Feature",
-                "geometry": {"type": "Point", "coordinates": [round(lon, 5), round(lat, 5)]},
-                "properties": {
-                    "id": f"eonet:{event.get('id')}",
-                    "source": "EONET",
-                    "name": event.get("title", "Wildfire").replace("Wildfire ", "").split(",")[0],
-                    "acres": acres,
-                    "contained": None,
-                    "state": US_STATES.get((event.get("title") or "").rsplit(", ", 1)[-1], ""),
-                    "cause": None,
-                    "discovered": latest.get("date"),
-                    "link": event.get("link"),
-                },
-            }
-        )
-    return out
-
-
-def dedupe(features):
-    """Drop EONET points that sit within ~15 km of a WFIGS incident."""
-    kept = [f for f in features if f["properties"]["source"] == "WFIGS"]
-    for feat in features:
-        if feat["properties"]["source"] == "WFIGS":
-            continue
-        lon, lat = feat["geometry"]["coordinates"]
-        near = any(
-            abs(lat - k["geometry"]["coordinates"][1]) < 0.15
-            and abs(lon - k["geometry"]["coordinates"][0]) < 0.15 / max(math.cos(math.radians(lat)), 0.1)
-            for k in kept
-        )
-        if not near:
-            kept.append(feat)
-    return kept
 
 
 def fetch_rainfall(feature):
@@ -627,10 +561,7 @@ def main():
         print("WFIGS unavailable; keeping existing data", file=sys.stderr)
         return 0
     print(f"  {len(wfigs)} US incidents >= {MIN_ACRES} acres")
-    eonet = optional("eonet", status, fetch_eonet, default=[])
-    print(f"  {len(eonet)} global events")
-
-    features = dedupe(wfigs + eonet)
+    features = wfigs
 
     print("fetching rainfall for largest fires...")
     with_rain = optional("rainfall", status, lambda: attach_rainfall(features), default=[])
