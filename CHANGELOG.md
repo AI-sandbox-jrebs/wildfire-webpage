@@ -2,6 +2,44 @@
 
 Public record of changes to Wildfire & Rainfall Watch.
 
+## Removed prescribed burns from the mapped burned-area history
+
+**2026-08-06 · correction**
+
+Our MTBS burned-area chart was counting deliberately-set prescribed burns as wildfires. This is the same mistake we had just corrected in the current-fire totals, made one layer down in the historical data.
+
+**Before:** 2020: 10.30M acres mapped (all fire types, no completeness flag)
+**After:** 2020: 9.65M acres mapped (wildfires only); 2025 flagged provisional
+
+What changed:
+- MTBS maps four kinds of fire: wildfires, prescribed fires, wildland fire use, and other. We were summing all of them. Of the 30,908 events we were including, 9,638 were prescribed burns contributing 18,187,450 acres, and only 16,756 were wildfires.
+- Every MTBS query is now restricted to wildfires, and a test guards against the filter being dropped again.
+- Separately, the newest years in this series were understated in a way that read like a collapse in burning. MTBS assesses fires a season or more after they burn, so 2025 has only 51 fires mapped so far, covering 22% of the acreage NIFC reported. Recent years that are still filling in are now flagged as provisional, drawn differently, and excluded from year-to-year comparisons.
+- The provisional flag deliberately applies only to recent years. Older years also map a smaller share of NIFC's total, but that is because MTBS only maps fires above a size threshold, not because the data is incomplete, so labelling them unfinished would have been wrong.
+
+> Note: MTBS remains a separate mapped product with its own size and selection criteria. It is never added to or substituted for the NIFC all-wildland-fire totals.
+
+[Inspect pull request #7](https://github.com/AI-sandbox-jrebs/wildfire-webpage/pull/7)
+
+---
+
+## Added a geographic Then vs Now map
+
+**2026-08-06 · feature**
+
+The history view now shows where mapped wildfires happened year by year, alongside the charts that explain how the pattern changed.
+
+What changed:
+- A shared year scrubber updates the historical map and the figures together, while Play years lets you watch the record advance.
+- Historical burns use charcoal tones rather than the ember colours reserved for active fires, and provisional MTBS years are marked while assessments catch up.
+- The navigation now stays visible as a clear desktop app bar or a thumb-friendly mobile tab bar.
+
+> Note: The map uses MTBS wildfire centroids, not fire perimeters, and keeps provisional recent years separate from completed-year comparisons.
+
+[Inspect pull request #7](https://github.com/AI-sandbox-jrebs/wildfire-webpage/pull/7)
+
+---
+
 ## Added a Then vs Now view for historical context
 
 **2026-08-06 · feature**

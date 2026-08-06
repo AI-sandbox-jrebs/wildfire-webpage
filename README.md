@@ -16,8 +16,10 @@ build. Contributors should edit the JSON rather than the generated Markdown.
 The **Then vs Now** view uses the long-run history in `data/longterm.json` to
 put current fires in context. It is refreshed weekly by
 `.github/workflows/refresh-history.yml` using `scripts/fetch_history.py`.
-Historical data is optional for deployment: a stale or unavailable refresh
-does not prevent the normal map from building.
+Its geographic map uses the compact, per-year MTBS wildfire centroids in
+`data/fire_years.json`; the map is deliberately separate from the NIFC
+all-fire totals. Historical data is optional for deployment: a stale or
+unavailable refresh does not prevent the normal map from building.
 
 ## Data
 
@@ -29,7 +31,7 @@ does not prevent the normal map from building.
 | Air quality (US AQI, PM2.5) near large fires | [Open-Meteo](https://open-meteo.com/) | at build time |
 | Smoke plumes (light / medium / heavy) | [NOAA HMS](https://www.ospo.noaa.gov/products/land/hms.html) | at build time, daily product |
 | US cities used for smoke exposure | [GeoNames](https://www.geonames.org/) (CC BY 4.0) | static, `scripts/build_cities.py` |
-| Long-term history | NIFC, NOAA NCEI, US Drought Monitor, MTBS | weekly |
+| Long-term history and historical map | NIFC, NOAA NCEI, US Drought Monitor, MTBS | weekly |
 
 No API keys are required.
 
@@ -77,6 +79,8 @@ Additional guards:
   because a slightly stale map beats no map.
 - Long-term history sources are refreshed independently; a failed source keeps
   its previous good series and records its status in `data/longterm.json`.
+- The historical MTBS point file is refreshed with the same guarded weekly job;
+  a short or failed point response never replaces a good `data/fire_years.json`.
 
 ## Rebuild
 

@@ -76,6 +76,7 @@ map.getPane("smoke").style.zIndex = 350;
 map.getPane("smoke").style.pointerEvents = "none";
 
 const nf = new Intl.NumberFormat("en-US");
+let summaryGenerated = null;
 const fmtAcres = (a) => (a == null ? "unknown" : `${nf.format(Math.round(a))} ac`);
 const fmtPeople = (n) =>
   n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${Math.round(n / 1e3)}k` : nf.format(n);
@@ -306,6 +307,10 @@ async function loadSummary() {
   document.getElementById("stat-dry-scope").textContent =
     `of ${nf.format(s.rainfall_sampled)} largest fires`;
   document.getElementById("stat-updated").textContent = new Date(s.generated).toLocaleString();
+  summaryGenerated = s.generated;
+  if (document.body.dataset.view !== "then-vs-now") {
+    document.getElementById("app-freshness").textContent = new Date(s.generated).toLocaleString();
+  }
 
   if (s.smoke && s.smoke.city_count) {
     const sm = s.smoke;
@@ -405,6 +410,16 @@ async function loadUpdates() {
 
 /* ---- long-term history view ---- */
 let historyPromise = null;
+let historyMap = null;
+let historyMapLayer = null;
+let historyPointsData = null;
+let historyPlayTimer = null;
+let historyPlaybackChanging = false;
+let historyMapFraming = "lower48";
+const HISTORY_MAP_BOUNDS = {
+  lower48: [[24, -126], [50, -66]],
+  "all-states": [[17, -170], [72, -60]],
+};
 const SVG_NS = "http://www.w3.org/2000/svg";
 
 function svgNode(tag, attrs) {
@@ -430,6 +445,10 @@ function makeHistoryChart(targetId, config, records, selectedYear) {
   const card = document.createElement("article");
   card.className = `history-chart${config.wide ? " history-chart--wide" : ""}`;
   card.append(textNode("h2", "", config.title), textNode("p", "history-chart__note", config.note));
+  const takeaway = config.takeaway && config.takeaway.sentence
+    ? textNode("p", "history-takeaway", `${config.takeaway.classification === "trend-like" ? "Trend" : "Natural variability"}: ${config.takeaway.sentence}`)
+    : null;
+  if (takeaway) card.append(takeaway);
   if (!records || !records.length) {
     card.append(textNode("p", "history-unavailable", "This series is currently unavailable."));
     target.append(card);
@@ -478,9 +497,13 @@ function makeHistoryChart(targetId, config, records, selectedYear) {
       const y = yFor(value);
       const rect = svgNode("rect", {
         x, y, width: barWidth, height: Math.max(1, top + plotHeight - y),
-        class: `bar ${config.primary ? "bar--primary" : ""}${record.year === selectedYear ? " bar--selected" : ""}`,
+        class: `bar ${config.primary ? "bar--primary" : ""}${record.year === selectedYear ? " bar--selected" : ""}${config.provisional && record.provisional ? " bar--provisional" : ""}`,
       });
       if (config.flag && record.count_flag) rect.setAttribute("opacity", "0.35");
+      if (config.provisional && record.provisional) {
+        rect.setAttribute("opacity", "0.38");
+        rect.setAttribute("stroke-dasharray", "3 2");
+      }
       svg.append(rect);
     });
   } else {
@@ -527,6 +550,124 @@ function renderHistoryYear(data, year) {
   });
 }
 
+function historyPopup(point, year) {
+  const content = document.createElement("div");
+  content.className = "history-popup";
+  const title = document.createElement("strong");
+  title.textContent = point.name || "Mapped wildfire";
+  content.append(title);
+  const details = document.createElement("p");
+  details.textContent = `${nf.format(point.acres)} acres · ${year}`;
+  content.append(details);
+  return content;
+}
+
+function renderHistoryMap(year) {
+  if (!historyMap || !historyPointsData) return;
+  historyMapLayer.clearLayers();
+  const points = historyPointsData.years[String(year)] || [];
+  const provisional = (historyPointsData.provisional_years || []).includes(Number(year));
+  let acres = 0;
+  points.forEach((point) => {
+    acres += point.acres || 0;
+    const radius = Math.max(2.5, Math.min(26, Math.sqrt(point.acres || 0) * 0.025));
+    const marker = L.circleMarker([point.lat, point.lon], {
+      radius,
+      color: "#514f4a",
+      weight: provisional ? 1.3 : 0.7,
+      dashArray: provisional ? "3 3" : null,
+      fillColor: "#343432",
+      fillOpacity: provisional ? 0.08 : 0.24,
+      className: provisional ? "history-fire-dot history-fire-dot--provisional" : "history-fire-dot",
+    });
+    marker.bindPopup(historyPopup(point, year));
+    marker.addTo(historyMapLayer);
+  });
+  const status = document.getElementById("history-map-status");
+  status.textContent = provisional ? "Provisional — still filling in" : `${points.length} mapped fires`;
+  document.getElementById("history-map-alt").textContent = points.length
+    ? `${year}: ${nf.format(points.length)} mapped wildfires covering approximately ${nf.format(Math.round(acres))} acres${provisional ? ". This year's map is provisional because MTBS assessments are still arriving." : "."}`
+    : `${year}: no mapped MTBS wildfire points are available.`;
+  document.getElementById("history-map").setAttribute(
+    "aria-label",
+    `Map of ${nf.format(points.length)} mapped MTBS wildfires in ${year}${provisional ? ", a provisional year" : ""}`,
+  );
+}
+
+function initHistoryMap() {
+  if (historyMap) {
+    historyMap.invalidateSize();
+    return;
+  }
+  historyMap = L.map("history-map", {
+    center: [34, -110],
+    zoom: window.innerWidth <= 600 ? 2.5 : 3,
+    minZoom: 2,
+    maxZoom: 8,
+    zoomControl: true,
+    preferCanvas: true,
+    worldCopyJump: true,
+  });
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+    attribution: '&copy; OpenStreetMap &copy; CARTO',
+    maxZoom: 8,
+  }).addTo(historyMap);
+  historyMapLayer = L.layerGroup().addTo(historyMap);
+  requestAnimationFrame(() => {
+    historyMap.invalidateSize();
+    applyHistoryMapFraming(historyMapFraming);
+  });
+}
+
+function applyHistoryMapFraming(framing) {
+  if (!historyMap || !HISTORY_MAP_BOUNDS[framing]) return;
+  historyMapFraming = framing;
+  historyMap.fitBounds(HISTORY_MAP_BOUNDS[framing], { padding: [10, 10] });
+  document.querySelectorAll("[data-history-frame]").forEach((button) => {
+    button.setAttribute("aria-pressed", button.dataset.historyFrame === framing ? "true" : "false");
+  });
+}
+
+function stopHistoryPlayback() {
+  clearInterval(historyPlayTimer);
+  historyPlayTimer = null;
+  const button = document.getElementById("history-play");
+  if (button) {
+    button.setAttribute("aria-pressed", "false");
+    button.innerHTML = '<span aria-hidden="true">▶</span> Play years';
+  }
+}
+
+function toggleHistoryPlayback() {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    document.getElementById("history-map-status").textContent = "Animation disabled by reduced-motion preference";
+    return;
+  }
+  if (historyPlayTimer) {
+    stopHistoryPlayback();
+    return;
+  }
+  const input = document.getElementById("history-year");
+  const years = Object.keys((historyPointsData && historyPointsData.years) || {}).map(Number).sort((a, b) => a - b);
+  if (!years.length) return;
+  let index = Math.max(0, years.indexOf(Number(input.value)));
+  const button = document.getElementById("history-play");
+  button.setAttribute("aria-pressed", "true");
+  button.innerHTML = '<span aria-hidden="true">Ⅱ</span> Pause years';
+  historyPlayTimer = setInterval(() => {
+    if (index >= years.length - 1) {
+      stopHistoryPlayback();
+      return;
+    }
+    index += 1;
+    historyPlaybackChanging = true;
+    input.value = years[index];
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    historyPlaybackChanging = false;
+    if (index >= years.length - 1) stopHistoryPlayback();
+  }, 900);
+}
+
 function renderHistorySources(data) {
   const list = document.getElementById("history-source-list");
   list.replaceChildren();
@@ -567,6 +708,7 @@ const HISTORY_CHARTS = [
     zero: true,
     wide: true,
     value: (record) => record.acres,
+    takeawayKey: "fire_acres",
     aria: "Annual NIFC acres burned, with the largest years clustered after 2000.",
   },
   {
@@ -579,6 +721,7 @@ const HISTORY_CHARTS = [
     lineClass: "line--warm",
     wide: true,
     value: (record) => record.acres_per_fire,
+    takeawayKey: "fire_size",
     aria: "Average acres per fire rises substantially in the recent record.",
   },
   {
@@ -590,6 +733,7 @@ const HISTORY_CHARTS = [
     zero: true,
     flag: true,
     value: (record) => record.fires,
+    takeawayKey: "fire_counts",
     aria: "Annual fire counts are flat to lower than the 1990s after excluding incomplete 1983–84 counts.",
   },
   {
@@ -599,6 +743,7 @@ const HISTORY_CHARTS = [
     note: "NOAA CONUS January–December precipitation minus the full-record mean baseline.",
     type: "line",
     value: (record) => record.anomaly,
+    takeawayKey: "precipitation",
     aria: "Annual contiguous US precipitation anomaly relative to the full-record mean.",
   },
   {
@@ -609,6 +754,7 @@ const HISTORY_CHARTS = [
     type: "line",
     lineClass: "line--warm",
     value: (record) => record.value,
+    takeawayKey: "temperature",
     aria: "Annual contiguous US average temperature over the NOAA record.",
   },
   {
@@ -620,6 +766,7 @@ const HISTORY_CHARTS = [
     lineClass: "line--dry",
     zero: true,
     value: (record) => record.value,
+    takeawayKey: "drought",
     aria: "Annual mean percent of contiguous US area in D1 or worse drought over the USDM record.",
   },
   {
@@ -629,18 +776,25 @@ const HISTORY_CHARTS = [
     note: "Separate mapped product; do not add this series to NIFC totals.",
     type: "bar",
     zero: true,
+    provisional: true,
     value: (record) => record.acres,
+    takeawayKey: "mtbs",
     aria: "Annual mapped burned area from MTBS, presented separately from NIFC all-fire totals.",
   },
 ];
 
 function drawHistoryCharts(data, selectedYear) {
   HISTORY_CHARTS.forEach((config) => {
-    makeHistoryChart(config.id, config, historySeries(data, config.series), selectedYear);
+    makeHistoryChart(config.id, { ...config, takeaway: data.derived && data.derived.takeaways && data.derived.takeaways[config.takeawayKey] }, historySeries(data, config.series), selectedYear);
   });
 }
 
-function renderHistory(data) {
+function renderHistory(data, points) {
+  document.getElementById("app-freshness").textContent = data.generated
+    ? new Date(data.generated).toLocaleString()
+    : "historical data";
+  historyPointsData = points;
+  initHistoryMap();
   const derived = data.derived;
   const verdict = document.getElementById("history-verdict");
   if (!derived) {
@@ -658,22 +812,34 @@ function renderHistory(data) {
   const selectedYear = Math.max(Number(yearInput.min), Math.min(Number(yearInput.max), Number(yearInput.value)));
   yearInput.value = selectedYear;
   renderHistoryYear(data, selectedYear);
+  renderHistoryMap(selectedYear);
   drawHistoryCharts(data, selectedYear);
   renderHistorySources(data);
   yearInput.oninput = () => {
     const year = Number(yearInput.value);
+    if (!historyPlaybackChanging) stopHistoryPlayback();
     renderHistoryYear(data, year);
+    renderHistoryMap(year);
     drawHistoryCharts(data, year);
   };
 }
 
 async function loadHistory() {
   if (!historyPromise) {
-    historyPromise = fetch(`data/longterm.json?v=${Date.now()}`).then((res) => {
-      if (!res.ok) throw new Error(`long-term history request failed: ${res.status}`);
-      return res.json();
-    }).then((data) => {
-      renderHistory(data);
+    historyPromise = Promise.all([
+      fetch(`data/longterm.json?v=${Date.now()}`).then((res) => {
+        if (!res.ok) throw new Error(`longterm.json request failed: ${res.status}`);
+        return res.json();
+      }),
+      fetch(`data/fire_years.json?v=${Date.now()}`).then((res) => {
+        if (!res.ok) throw new Error(`fire_years.json request failed: ${res.status}`);
+        return res.json();
+      }).catch((err) => {
+        console.error("historical map failed", err);
+        return { years: {}, provisional_years: [], metadata: {} };
+      }),
+    ]).then(([data, points]) => {
+      renderHistory(data, points);
       return data;
     });
   }
@@ -815,6 +981,10 @@ document.getElementById("toggle-fires").addEventListener("change", (e) => {
   if (e.target.checked) fireLayer.addTo(map);
   else map.removeLayer(fireLayer);
 });
+document.getElementById("history-play").addEventListener("click", toggleHistoryPlayback);
+document.querySelectorAll("[data-history-frame]").forEach((button) => {
+  button.addEventListener("click", () => applyHistoryMapFraming(button.dataset.historyFrame));
+});
 
 /* Mobile: panels collapse into toggle chips. */
 document.querySelectorAll("[data-toggle-panel]").forEach((btn) => {
@@ -844,6 +1014,7 @@ function viewFromLocation() {
 }
 
 function applyView(view) {
+  if (view.id !== "then-vs-now") stopHistoryPlayback();
   activeView = view;
   document.body.dataset.view = view.id;
   const updates = document.getElementById("updates-view");
@@ -854,6 +1025,9 @@ function applyView(view) {
     const current = button.dataset.view === view.id;
     button.setAttribute("aria-current", current ? "page" : "false");
   });
+  if (view.id !== "then-vs-now" && summaryGenerated) {
+    document.getElementById("app-freshness").textContent = new Date(summaryGenerated).toLocaleString();
+  }
   view.onEnter();
 }
 
