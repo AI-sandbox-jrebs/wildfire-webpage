@@ -30,6 +30,11 @@ upstream source or our interpretation is correct. This is an AI-built site:
 figures are machine-generated from public federal sources, and corrections
 are recorded in the public Updates log.
 
+Theme drift is checked by `scripts/check_theme.py`, which reports hardcoded
+component colours with selectors and line numbers. The browser review also
+checks the shared typography, card, control, focus, and status language across
+all three views; surface brightness is the only intentional difference.
+
 ## Data
 
 | Layer | Source | Refreshed |
@@ -69,6 +74,24 @@ outside a plume edge. The UI says so.
 ```bash
 python3 -m unittest discover -s scripts -p 'test_*.py'
 ```
+
+For a direct stylesheet check:
+
+```bash
+python3 scripts/check_theme.py
+```
+
+The cross-view computed-style assertion runs in Chromium and compares the
+shared geometry and typography of the Updates and Then vs Now surfaces:
+
+```bash
+python3 scripts/check_theme_browser.py
+```
+
+It uses an explicit property-level allowlist for surface brightness only
+(background, text, border colours, and shadows). A mismatch reports the
+component and CSS property; it is a required part of the browser verification
+sequence rather than an optional visual check.
 
 These cover the places the site computes rather than relays — growth deltas,
 smoke exposure, and the long-term history parser and derived statistics.

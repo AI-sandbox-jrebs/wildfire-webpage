@@ -2,6 +2,36 @@
 
 Public record of changes to Wildfire & Rainfall Watch.
 
+## Added automated cross-view theme checks
+
+**2026-08-06 · improvement**
+
+The build review now includes a Chromium computed-style assertion so typography and component geometry cannot silently drift between views.
+
+What changed:
+- The browser check compares headings, eyebrows, cards, and controls across Updates and Then vs Now.
+- Only explicitly named surface-brightness properties may differ; radius, borders, padding, and typography must match.
+- A stylesheet token lint separately reports hardcoded component colours with selectors and line numbers.
+
+> Note: The browser assertion is run with python3 scripts/check_theme_browser.py.
+
+---
+
+## Aligned the visual language across all views
+
+**2026-08-06 · improvement**
+
+Now, Updates, and Then vs Now now share the same type hierarchy, card treatment, controls, focus rings, and semantic colour meanings while keeping their distinct dark and light surfaces.
+
+What changed:
+- Added a stylesheet token check for hardcoded component colours and a browser review of shared computed styles.
+- Fixed older Now and Updates controls, headings, cards, and status treatments that had drifted from the historical editorial view.
+- Play years now restarts from the first year when pressed at the end of the scrubber.
+
+> Note: Surface brightness remains the only intentional cross-view styling difference.
+
+---
+
 ## Published machine-checkable data verification
 
 **2026-08-06 · improvement**

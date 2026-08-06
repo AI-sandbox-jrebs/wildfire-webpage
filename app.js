@@ -76,6 +76,9 @@ map.getPane("smoke").style.zIndex = 350;
 map.getPane("smoke").style.pointerEvents = "none";
 
 const nf = new Intl.NumberFormat("en-US");
+function themeColor(name, fallback) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+}
 let summaryGenerated = null;
 const fmtAcres = (a) => (a == null ? "unknown" : `${nf.format(Math.round(a))} ac`);
 const fmtPeople = (n) =>
@@ -94,10 +97,10 @@ function zoomFactor() {
 }
 
 function fireColor(acres) {
-  if (!acres) return "#ff7b3d";
-  if (acres >= 50000) return "#ffd166";
-  if (acres >= 10000) return "#ff9e3d";
-  return "#ff5f2e";
+  if (!acres) return themeColor("--fire-mid", "#ff9e3d");
+  if (acres >= 50000) return themeColor("--fire-hot", "#ffd166");
+  if (acres >= 10000) return themeColor("--fire-mid", "#ff9e3d");
+  return themeColor("--fire", "#ff6a2b");
 }
 
 function sparkline(rain) {
@@ -774,7 +777,7 @@ function renderHistoryMap(year) {
       color: "#514f4a",
       weight: provisional ? 1.3 : 0.7,
       dashArray: provisional ? "3 3" : null,
-      fillColor: "#343432",
+      fillColor: themeColor("--char", "#343432"),
       fillOpacity: provisional ? 0.08 : 0.24,
       className: provisional ? "history-fire-dot history-fire-dot--provisional" : "history-fire-dot",
     });
@@ -849,6 +852,14 @@ function toggleHistoryPlayback() {
   const years = Object.keys((historyPointsData && historyPointsData.years) || {}).map(Number).sort((a, b) => a - b);
   if (!years.length) return;
   let index = Math.max(0, years.indexOf(Number(input.value)));
+  if (index >= years.length - 1) {
+    index = 0;
+    historyPlaybackChanging = true;
+    input.value = years[index];
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    historyPlaybackChanging = false;
+    document.getElementById("history-map-status").textContent = `Playing from ${years[index]}`;
+  }
   const button = document.getElementById("history-play");
   button.setAttribute("aria-pressed", "true");
   button.innerHTML = '<span aria-hidden="true">Ⅱ</span> Pause years';
@@ -1053,9 +1064,9 @@ async function loadHistory() {
 
 /* ---- smoke plumes (NOAA HMS, refreshed at build time) ---- */
 const SMOKE_STYLE = {
-  Light: { color: "#cfd8e3", fillOpacity: 0.1, weight: 0.5 },
-  Medium: { color: "#e7d3a8", fillOpacity: 0.18, weight: 0.6 },
-  Heavy: { color: "#e0a06a", fillOpacity: 0.3, weight: 0.8 },
+  Light: { color: themeColor("--smoke-light", "#cfd8e3"), fillOpacity: 0.1, weight: 0.5 },
+  Medium: { color: themeColor("--smoke", "#e7d3a8"), fillOpacity: 0.18, weight: 0.6 },
+  Heavy: { color: themeColor("--smoke-heavy", "#e0a06a"), fillOpacity: 0.3, weight: 0.8 },
 };
 let smokeLayer = null;
 

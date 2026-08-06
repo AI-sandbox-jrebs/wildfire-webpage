@@ -2,6 +2,30 @@
   {
     "date": "2026-08-06",
     "kind": "improvement",
+    "title": "Added automated cross-view theme checks",
+    "summary": "The build review now includes a Chromium computed-style assertion so typography and component geometry cannot silently drift between views.",
+    "details": [
+      "The browser check compares headings, eyebrows, cards, and controls across Updates and Then vs Now.",
+      "Only explicitly named surface-brightness properties may differ; radius, borders, padding, and typography must match.",
+      "A stylesheet token lint separately reports hardcoded component colours with selectors and line numbers."
+    ],
+    "note": "The browser assertion is run with python3 scripts/check_theme_browser.py."
+  },
+  {
+    "date": "2026-08-06",
+    "kind": "improvement",
+    "title": "Aligned the visual language across all views",
+    "summary": "Now, Updates, and Then vs Now now share the same type hierarchy, card treatment, controls, focus rings, and semantic colour meanings while keeping their distinct dark and light surfaces.",
+    "details": [
+      "Added a stylesheet token check for hardcoded component colours and a browser review of shared computed styles.",
+      "Fixed older Now and Updates controls, headings, cards, and status treatments that had drifted from the historical editorial view.",
+      "Play years now restarts from the first year when pressed at the end of the scrubber."
+    ],
+    "note": "Surface brightness remains the only intentional cross-view styling difference."
+  },
+  {
+    "date": "2026-08-06",
+    "kind": "improvement",
     "title": "Published machine-checkable data verification",
     "summary": "The Updates view now shows the checks we run over the generated data, the values compared, and links to the source queries a reader can rerun.",
     "details": [
