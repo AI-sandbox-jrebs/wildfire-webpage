@@ -2,6 +2,103 @@
 
 Public record of changes to Wildfire & Rainfall Watch.
 
+## Added automated cross-view theme checks
+
+**2026-08-06 · improvement**
+
+The build review now includes a Chromium computed-style assertion so typography and component geometry cannot silently drift between views.
+
+What changed:
+- The browser check compares headings, eyebrows, cards, and controls across Updates and Then vs Now.
+- Only explicitly named surface-brightness properties may differ; radius, borders, padding, and typography must match.
+- A stylesheet token lint separately reports hardcoded component colours with selectors and line numbers.
+
+> Note: The browser assertion is run with python3 scripts/check_theme_browser.py.
+
+---
+
+## Aligned the visual language across all views
+
+**2026-08-06 · improvement**
+
+Now, Updates, and Then vs Now now share the same type hierarchy, card treatment, controls, focus rings, and semantic colour meanings while keeping their distinct dark and light surfaces.
+
+What changed:
+- Added a stylesheet token check for hardcoded component colours and a browser review of shared computed styles.
+- Fixed older Now and Updates controls, headings, cards, and status treatments that had drifted from the historical editorial view.
+- Play years now restarts from the first year when pressed at the end of the scrubber.
+
+> Note: Surface brightness remains the only intentional cross-view styling difference.
+
+---
+
+## Published machine-checkable data verification
+
+**2026-08-06 · improvement**
+
+The Updates view now shows the checks we run over the generated data, the values compared, and links to the source queries a reader can rerun.
+
+What changed:
+- Checks cover cross-source acreage comparisons, wildfire-only MTBS filtering, provisional-year recency, current-fire counts, drought ranges, coverage gaps, plausible values, provenance, and freshness.
+- The results are diagnostic rather than a certification: they can catch internal inconsistency and malformed values, but they cannot prove that an upstream source or our interpretation is correct.
+- This site is AI-built and its corrections are logged publicly, including the stale EONET records, prescribed-fire contamination, and MTBS assessment-lag fixes.
+
+> Note: A failed or flagged check is shown rather than hidden; source links point to the query or data endpoint used for the comparison.
+
+---
+
+## Calibrated the MTBS cross-source verification check
+
+**2026-08-06 · correction**
+
+The MTBS/NIFC comparison now allows modest measurement differences while still detecting the larger and repeated excess pattern caused by the former all-fire-types query.
+
+What changed:
+- MTBS maps perimeter footprints, which can include unburned inclusions, while NIFC reports incident acreage; the products are not strict subsets.
+- The check now flags unusually large single-year excess or excess across too many years. The wildfire-only generated history passes this calibrated check, while the former all-fire-types result would have failed it.
+
+> Note: The source-method caveat is part of the check description shown on Updates.
+
+---
+
+## Removed prescribed burns from the mapped burned-area history
+
+**2026-08-06 · correction**
+
+Our MTBS burned-area chart was counting deliberately-set prescribed burns as wildfires. This is the same mistake we had just corrected in the current-fire totals, made one layer down in the historical data.
+
+**Before:** 2020: 10.30M acres mapped (all fire types, no completeness flag)
+**After:** 2020: 9.65M acres mapped (wildfires only); 2025 flagged provisional
+
+What changed:
+- MTBS maps four kinds of fire: wildfires, prescribed fires, wildland fire use, and other. We were summing all of them. Of the 30,908 events we were including, 9,638 were prescribed burns contributing 18,187,450 acres, and only 16,756 were wildfires.
+- Every MTBS query is now restricted to wildfires, and a test guards against the filter being dropped again.
+- Separately, the newest years in this series were understated in a way that read like a collapse in burning. MTBS assesses fires a season or more after they burn, so 2025 has only 51 fires mapped so far, covering 22% of the acreage NIFC reported. Recent years that are still filling in are now flagged as provisional, drawn differently, and excluded from year-to-year comparisons.
+- The provisional flag deliberately applies only to recent years. Older years also map a smaller share of NIFC's total, but that is because MTBS only maps fires above a size threshold, not because the data is incomplete, so labelling them unfinished would have been wrong.
+
+> Note: MTBS remains a separate mapped product with its own size and selection criteria. It is never added to or substituted for the NIFC all-wildland-fire totals.
+
+[Inspect pull request #7](https://github.com/AI-sandbox-jrebs/wildfire-webpage/pull/7)
+
+---
+
+## Added a geographic Then vs Now map
+
+**2026-08-06 · feature**
+
+The history view now shows where mapped wildfires happened year by year, alongside the charts that explain how the pattern changed.
+
+What changed:
+- A shared year scrubber updates the historical map and the figures together, while Play years lets you watch the record advance.
+- Historical burns use charcoal tones rather than the ember colours reserved for active fires, and provisional MTBS years are marked while assessments catch up.
+- The navigation now stays visible as a clear desktop app bar or a thumb-friendly mobile tab bar.
+
+> Note: The map uses MTBS wildfire centroids, not fire perimeters, and keeps provisional recent years separate from completed-year comparisons.
+
+[Inspect pull request #7](https://github.com/AI-sandbox-jrebs/wildfire-webpage/pull/7)
+
+---
+
 ## Added a Then vs Now view for historical context
 
 **2026-08-06 · feature**

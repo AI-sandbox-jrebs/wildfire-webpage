@@ -76,6 +76,10 @@ map.getPane("smoke").style.zIndex = 350;
 map.getPane("smoke").style.pointerEvents = "none";
 
 const nf = new Intl.NumberFormat("en-US");
+function themeColor(name, fallback) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+}
+let summaryGenerated = null;
 const fmtAcres = (a) => (a == null ? "unknown" : `${nf.format(Math.round(a))} ac`);
 const fmtPeople = (n) =>
   n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${Math.round(n / 1e3)}k` : nf.format(n);
@@ -93,10 +97,10 @@ function zoomFactor() {
 }
 
 function fireColor(acres) {
-  if (!acres) return "#ff7b3d";
-  if (acres >= 50000) return "#ffd166";
-  if (acres >= 10000) return "#ff9e3d";
-  return "#ff5f2e";
+  if (!acres) return themeColor("--fire-mid", "#ff9e3d");
+  if (acres >= 50000) return themeColor("--fire-hot", "#ffd166");
+  if (acres >= 10000) return themeColor("--fire-mid", "#ff9e3d");
+  return themeColor("--fire", "#ff6a2b");
 }
 
 function sparkline(rain) {
@@ -306,6 +310,10 @@ async function loadSummary() {
   document.getElementById("stat-dry-scope").textContent =
     `of ${nf.format(s.rainfall_sampled)} largest fires`;
   document.getElementById("stat-updated").textContent = new Date(s.generated).toLocaleString();
+  summaryGenerated = s.generated;
+  if (document.body.dataset.view !== "then-vs-now") {
+    document.getElementById("app-freshness").textContent = new Date(s.generated).toLocaleString();
+  }
 
   if (s.smoke && s.smoke.city_count) {
     const sm = s.smoke;
@@ -334,6 +342,7 @@ async function loadSummary() {
 
 /* ---- public updates view ---- */
 let changelogPromise = null;
+let verificationPromise = null;
 
 function textNode(tag, className, text) {
   const node = document.createElement(tag);
@@ -383,6 +392,190 @@ function renderUpdates(entries) {
   });
 }
 
+function renderVerification(result) {
+  const summary = document.getElementById("verification-summary");
+  const list = document.getElementById("verification-list");
+  list.replaceChildren();
+  if (result.error) {
+    summary.textContent = "Checks unavailable";
+    list.append(textNode("p", "verification-error", result.error));
+    return;
+  }
+  const counts = result.summary || {};
+  summary.replaceChildren(
+    textNode("strong", "verification-summary__headline", "Review status"),
+    textNode("span", "verification-summary__pass", `${counts.pass || 0} passed`),
+    textNode("span", "verification-summary__flag", `${counts.flag || 0} flagged`),
+    textNode("span", "verification-summary__fail", `${counts.fail || 0} failed`),
+  );
+  (result.checks || []).forEach((check) => {
+    const card = document.createElement("article");
+    card.className = `verification-check verification-check--${check.status}`;
+    const heading = document.createElement("div");
+    heading.className = "verification-check__head";
+    heading.append(
+      textNode("h3", "", verificationTitle(check)),
+      textNode("span", "verification-check__status", check.status),
+    );
+    card.append(heading);
+    card.append(textNode("p", "verification-check__description", check.description));
+    card.append(textNode("p", "verification-check__summary", verificationSummary(check)));
+    if (check.id === "mtbs-excess-calibration") card.append(verificationDetailsTable(check));
+    const sources = document.createElement("div");
+    sources.className = "verification-check__sources";
+    sources.append(textNode("span", "", "Sources:"));
+    (check.sources || []).filter(Boolean).forEach((url, index) => {
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("target", "_blank");
+      link.rel = "noopener noreferrer";
+      link.textContent = verificationSourceLabel(check, index);
+      sources.append(link);
+    });
+    card.append(sources);
+    list.append(card);
+  });
+}
+
+function verificationTitle(check) {
+  const titles = {
+    "mtbs-excess-calibration": "MTBS acreage stays within tolerance of NIFC",
+    "mtbs-wildfire-only": "MTBS records use the wildfire-only filter",
+    "mtbs-provisional-recent": "MTBS provisional flags are limited to recent years",
+    "current-fire-count": "Published current-fire count matches WFIGS at build time",
+    "drought-range": "Drought percentages stay within 0–100%",
+    "plausible-values": "Published values stay within plausible bounds",
+    "source-provenance": "Published sources include rerunnable URLs and timestamps",
+    "data-freshness": "Published data freshness is checked against refresh intervals",
+  };
+  if (titles[check.id]) return titles[check.id];
+  if (check.id.startsWith("coverage-")) {
+    const names = {
+      nifc: "NIFC annual statistics",
+      noaa_pcp: "NOAA precipitation",
+      noaa_tavg: "NOAA temperature",
+      noaa_zndx: "NOAA Palmer Z-Index",
+      usdm: "U.S. Drought Monitor",
+      mtbs: "MTBS mapped acreage",
+    };
+    return `${names[check.id.slice("coverage-".length)] || check.id.slice("coverage-".length)} coverage has no gaps`;
+  }
+  return check.description;
+}
+
+function formatVerificationNumber(value, decimals = 0) {
+  if (value === null || value === undefined || Number.isNaN(Number(value))) return "unavailable";
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: decimals }).format(Number(value));
+}
+
+function formatVerificationPercent(value) {
+  return `${(Number(value) * 100).toFixed(1)}%`;
+}
+
+function verificationSummary(check) {
+  const actual = check.actual || {};
+  if (check.id === "mtbs-excess-calibration") {
+    const comparisons = actual.comparisons || [];
+    const exceeding = actual.exceeding_years || [];
+    const largest = comparisons.reduce((best, item) => (
+      !best || item.excess_ratio > best.excess_ratio ? item : best
+    ), null);
+    return `Only ${exceeding.length} of ${comparisons.length} years exceeded NIFC; largest excess was ${largest ? `${largest.year} at ${formatVerificationPercent(largest.excess_ratio)}` : "unavailable"}. Tolerance: ${formatVerificationPercent(actual.excess_threshold)}.`;
+  }
+  if (check.id === "mtbs-wildfire-only") {
+    return actual.wildfire_filter_present ? "The published MTBS query includes fire_type='Wildfire'; no other fire types are included." : "The published MTBS query does not show the required wildfire-only filter.";
+  }
+  if (check.id === "mtbs-provisional-recent") {
+    return `${(actual.provisional_years || []).length} provisional year${(actual.provisional_years || []).length === 1 ? "" : "s"} published; ${actual.old_provisional_years?.length || 0} fall outside the recent assessment-lag window.`;
+  }
+  if (check.id === "current-fire-count") {
+    return actual.published_count === actual.wfigs_reported_count
+      ? `${formatVerificationNumber(actual.published_count)} fires fetched, matching WFIGS's reported total when this data was built.`
+      : `Published count: ${formatVerificationNumber(actual.published_count)}; WFIGS build-time total: ${formatVerificationNumber(actual.wfigs_reported_count)}.`;
+  }
+  if (check.id === "drought-range") {
+    return `${actual.invalid_records?.length || 0} invalid records among ${formatVerificationNumber(actual.record_count)} published drought values.`;
+  }
+  if (check.id.startsWith("coverage-")) {
+    return `${formatVerificationNumber(actual.record_count)} records from ${actual.coverage_start ?? "unavailable"} through ${actual.coverage_end ?? "unavailable"}.`;
+  }
+  if (check.id === "plausible-values") {
+    return `${actual.invalid_values?.length || 0} values outside the broad plausibility bounds.`;
+  }
+  if (check.id === "source-provenance") {
+    return actual.missing_sources?.length
+      ? `Missing provenance: ${actual.missing_sources.join(", ")}.`
+      : "Every published historical source has a rerunnable URL and last-success timestamp.";
+  }
+  if (check.id === "data-freshness") {
+    return actual.stale_sources?.length
+      ? `${actual.stale_sources.length} source${actual.stale_sources.length === 1 ? "" : "s"} older than the expected refresh interval.`
+      : "All sources are within their expected refresh intervals.";
+  }
+  return check.description;
+}
+
+function verificationSourceLabel(check, index) {
+  const labels = {
+    "mtbs-excess-calibration": ["MTBS wildfire query", "NIFC annual statistics table"],
+    "mtbs-wildfire-only": ["MTBS wildfire query", "MTBS points query"],
+    "mtbs-provisional-recent": ["MTBS wildfire query", "NIFC annual statistics table"],
+    "current-fire-count": ["WFIGS current-fire count query"],
+    "drought-range": ["U.S. Drought Monitor query"],
+    "plausible-values": ["NIFC annual statistics table", "WFIGS current-fire query"],
+    "data-freshness": ["WFIGS current-fire count query"],
+  };
+  if (labels[check.id]?.[index]) return labels[check.id][index];
+  if (check.id.startsWith("coverage-")) {
+    const names = {
+      nifc: "NIFC annual statistics table",
+      noaa_pcp: "NOAA precipitation query",
+      noaa_tavg: "NOAA temperature query",
+      noaa_zndx: "NOAA Palmer Z-Index query",
+      usdm: "U.S. Drought Monitor query",
+      mtbs: "MTBS wildfire query",
+    };
+    return names[check.id.slice("coverage-".length)] || "Source query";
+  }
+  if (check.id === "source-provenance") {
+    const names = [
+      "NIFC annual statistics table",
+      "NOAA precipitation query",
+      "NOAA temperature query",
+      "NOAA Palmer Z-Index query",
+      "U.S. Drought Monitor query",
+      "MTBS wildfire query",
+      "MTBS points query",
+    ];
+    return names[index] || `Published source ${index + 1}`;
+  }
+  return `Source ${index + 1}`;
+}
+
+function verificationDetailsTable(check) {
+  const details = document.createElement("details");
+  details.className = "verification-check__details";
+  const summary = document.createElement("summary");
+  summary.textContent = "Show all year-by-year comparisons";
+  details.append(summary);
+  const table = document.createElement("table");
+  table.className = "verification-check__table";
+  table.innerHTML = "<caption>MTBS and NIFC matching-year acreage</caption><thead><tr><th scope=\"col\">Year</th><th scope=\"col\">MTBS acres</th><th scope=\"col\">NIFC acres</th><th scope=\"col\">Excess</th></tr></thead>";
+  const body = document.createElement("tbody");
+  (check.actual?.comparisons || []).forEach((item) => {
+    const row = document.createElement("tr");
+    [item.year, formatVerificationNumber(item.mtbs_acres), formatVerificationNumber(item.nifc_acres), formatVerificationPercent(item.excess_ratio)].forEach((value) => {
+      const cell = document.createElement("td");
+      cell.textContent = value;
+      row.append(cell);
+    });
+    body.append(row);
+  });
+  table.append(body);
+  details.append(table);
+  return details;
+}
+
 async function loadUpdates() {
   if (!changelogPromise) {
     changelogPromise = fetch(`data/changelog.json?v=${Date.now()}`).then((res) => {
@@ -391,6 +584,19 @@ async function loadUpdates() {
     }).then((entries) => {
       renderUpdates(entries);
       return entries;
+    });
+  }
+  if (!verificationPromise) {
+    verificationPromise = fetch(`data/verification.json?v=${Date.now()}`).then((res) => {
+      if (!res.ok) throw new Error(`verification.json request failed: ${res.status}`);
+      return res.json();
+    }).then((result) => {
+      renderVerification(result);
+      return result;
+    }).catch((err) => {
+      renderVerification({ error: "Verification results are temporarily unavailable." });
+      console.error("verification failed", err);
+      return null;
     });
   }
   try {
@@ -405,6 +611,16 @@ async function loadUpdates() {
 
 /* ---- long-term history view ---- */
 let historyPromise = null;
+let historyMap = null;
+let historyMapLayer = null;
+let historyPointsData = null;
+let historyPlayTimer = null;
+let historyPlaybackChanging = false;
+let historyMapFraming = "lower48";
+const HISTORY_MAP_BOUNDS = {
+  lower48: [[24, -126], [50, -66]],
+  "all-states": [[17, -170], [72, -60]],
+};
 const SVG_NS = "http://www.w3.org/2000/svg";
 
 function svgNode(tag, attrs) {
@@ -430,6 +646,10 @@ function makeHistoryChart(targetId, config, records, selectedYear) {
   const card = document.createElement("article");
   card.className = `history-chart${config.wide ? " history-chart--wide" : ""}`;
   card.append(textNode("h2", "", config.title), textNode("p", "history-chart__note", config.note));
+  const takeaway = config.takeaway && config.takeaway.sentence
+    ? textNode("p", "history-takeaway", `${config.takeaway.classification === "trend-like" ? "Trend" : "Natural variability"}: ${config.takeaway.sentence}`)
+    : null;
+  if (takeaway) card.append(takeaway);
   if (!records || !records.length) {
     card.append(textNode("p", "history-unavailable", "This series is currently unavailable."));
     target.append(card);
@@ -478,9 +698,13 @@ function makeHistoryChart(targetId, config, records, selectedYear) {
       const y = yFor(value);
       const rect = svgNode("rect", {
         x, y, width: barWidth, height: Math.max(1, top + plotHeight - y),
-        class: `bar ${config.primary ? "bar--primary" : ""}${record.year === selectedYear ? " bar--selected" : ""}`,
+        class: `bar ${config.primary ? "bar--primary" : ""}${record.year === selectedYear ? " bar--selected" : ""}${config.provisional && record.provisional ? " bar--provisional" : ""}`,
       });
       if (config.flag && record.count_flag) rect.setAttribute("opacity", "0.35");
+      if (config.provisional && record.provisional) {
+        rect.setAttribute("opacity", "0.38");
+        rect.setAttribute("stroke-dasharray", "3 2");
+      }
       svg.append(rect);
     });
   } else {
@@ -527,6 +751,132 @@ function renderHistoryYear(data, year) {
   });
 }
 
+function historyPopup(point, year) {
+  const content = document.createElement("div");
+  content.className = "history-popup";
+  const title = document.createElement("strong");
+  title.textContent = point.name || "Mapped wildfire";
+  content.append(title);
+  const details = document.createElement("p");
+  details.textContent = `${nf.format(point.acres)} acres · ${year}`;
+  content.append(details);
+  return content;
+}
+
+function renderHistoryMap(year) {
+  if (!historyMap || !historyPointsData) return;
+  historyMapLayer.clearLayers();
+  const points = historyPointsData.years[String(year)] || [];
+  const provisional = (historyPointsData.provisional_years || []).includes(Number(year));
+  let acres = 0;
+  points.forEach((point) => {
+    acres += point.acres || 0;
+    const radius = Math.max(2.5, Math.min(26, Math.sqrt(point.acres || 0) * 0.025));
+    const marker = L.circleMarker([point.lat, point.lon], {
+      radius,
+      color: "#514f4a",
+      weight: provisional ? 1.3 : 0.7,
+      dashArray: provisional ? "3 3" : null,
+      fillColor: themeColor("--char", "#343432"),
+      fillOpacity: provisional ? 0.08 : 0.24,
+      className: provisional ? "history-fire-dot history-fire-dot--provisional" : "history-fire-dot",
+    });
+    marker.bindPopup(historyPopup(point, year));
+    marker.addTo(historyMapLayer);
+  });
+  const status = document.getElementById("history-map-status");
+  status.textContent = provisional ? "Provisional — still filling in" : `${points.length} mapped fires`;
+  document.getElementById("history-map-alt").textContent = points.length
+    ? `${year}: ${nf.format(points.length)} mapped wildfires covering approximately ${nf.format(Math.round(acres))} acres${provisional ? ". This year's map is provisional because MTBS assessments are still arriving." : "."}`
+    : `${year}: no mapped MTBS wildfire points are available.`;
+  document.getElementById("history-map").setAttribute(
+    "aria-label",
+    `Map of ${nf.format(points.length)} mapped MTBS wildfires in ${year}${provisional ? ", a provisional year" : ""}`,
+  );
+}
+
+function initHistoryMap() {
+  if (historyMap) {
+    historyMap.invalidateSize();
+    return;
+  }
+  historyMap = L.map("history-map", {
+    center: [34, -110],
+    zoom: window.innerWidth <= 600 ? 2.5 : 3,
+    minZoom: 2,
+    maxZoom: 8,
+    zoomControl: true,
+    preferCanvas: true,
+    worldCopyJump: true,
+  });
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+    attribution: '&copy; OpenStreetMap &copy; CARTO',
+    maxZoom: 8,
+  }).addTo(historyMap);
+  historyMapLayer = L.layerGroup().addTo(historyMap);
+  requestAnimationFrame(() => {
+    historyMap.invalidateSize();
+    applyHistoryMapFraming(historyMapFraming);
+  });
+}
+
+function applyHistoryMapFraming(framing) {
+  if (!historyMap || !HISTORY_MAP_BOUNDS[framing]) return;
+  historyMapFraming = framing;
+  historyMap.fitBounds(HISTORY_MAP_BOUNDS[framing], { padding: [10, 10] });
+  document.querySelectorAll("[data-history-frame]").forEach((button) => {
+    button.setAttribute("aria-pressed", button.dataset.historyFrame === framing ? "true" : "false");
+  });
+}
+
+function stopHistoryPlayback() {
+  clearInterval(historyPlayTimer);
+  historyPlayTimer = null;
+  const button = document.getElementById("history-play");
+  if (button) {
+    button.setAttribute("aria-pressed", "false");
+    button.innerHTML = '<span aria-hidden="true">▶</span> Play years';
+  }
+}
+
+function toggleHistoryPlayback() {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    document.getElementById("history-map-status").textContent = "Animation disabled by reduced-motion preference";
+    return;
+  }
+  if (historyPlayTimer) {
+    stopHistoryPlayback();
+    return;
+  }
+  const input = document.getElementById("history-year");
+  const years = Object.keys((historyPointsData && historyPointsData.years) || {}).map(Number).sort((a, b) => a - b);
+  if (!years.length) return;
+  let index = Math.max(0, years.indexOf(Number(input.value)));
+  if (index >= years.length - 1) {
+    index = 0;
+    historyPlaybackChanging = true;
+    input.value = years[index];
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    historyPlaybackChanging = false;
+    document.getElementById("history-map-status").textContent = `Playing from ${years[index]}`;
+  }
+  const button = document.getElementById("history-play");
+  button.setAttribute("aria-pressed", "true");
+  button.innerHTML = '<span aria-hidden="true">Ⅱ</span> Pause years';
+  historyPlayTimer = setInterval(() => {
+    if (index >= years.length - 1) {
+      stopHistoryPlayback();
+      return;
+    }
+    index += 1;
+    historyPlaybackChanging = true;
+    input.value = years[index];
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    historyPlaybackChanging = false;
+    if (index >= years.length - 1) stopHistoryPlayback();
+  }, 900);
+}
+
 function renderHistorySources(data) {
   const list = document.getElementById("history-source-list");
   list.replaceChildren();
@@ -567,6 +917,7 @@ const HISTORY_CHARTS = [
     zero: true,
     wide: true,
     value: (record) => record.acres,
+    takeawayKey: "fire_acres",
     aria: "Annual NIFC acres burned, with the largest years clustered after 2000.",
   },
   {
@@ -579,6 +930,7 @@ const HISTORY_CHARTS = [
     lineClass: "line--warm",
     wide: true,
     value: (record) => record.acres_per_fire,
+    takeawayKey: "fire_size",
     aria: "Average acres per fire rises substantially in the recent record.",
   },
   {
@@ -590,6 +942,7 @@ const HISTORY_CHARTS = [
     zero: true,
     flag: true,
     value: (record) => record.fires,
+    takeawayKey: "fire_counts",
     aria: "Annual fire counts are flat to lower than the 1990s after excluding incomplete 1983–84 counts.",
   },
   {
@@ -599,6 +952,7 @@ const HISTORY_CHARTS = [
     note: "NOAA CONUS January–December precipitation minus the full-record mean baseline.",
     type: "line",
     value: (record) => record.anomaly,
+    takeawayKey: "precipitation",
     aria: "Annual contiguous US precipitation anomaly relative to the full-record mean.",
   },
   {
@@ -609,6 +963,7 @@ const HISTORY_CHARTS = [
     type: "line",
     lineClass: "line--warm",
     value: (record) => record.value,
+    takeawayKey: "temperature",
     aria: "Annual contiguous US average temperature over the NOAA record.",
   },
   {
@@ -620,6 +975,7 @@ const HISTORY_CHARTS = [
     lineClass: "line--dry",
     zero: true,
     value: (record) => record.value,
+    takeawayKey: "drought",
     aria: "Annual mean percent of contiguous US area in D1 or worse drought over the USDM record.",
   },
   {
@@ -629,18 +985,25 @@ const HISTORY_CHARTS = [
     note: "Separate mapped product; do not add this series to NIFC totals.",
     type: "bar",
     zero: true,
+    provisional: true,
     value: (record) => record.acres,
+    takeawayKey: "mtbs",
     aria: "Annual mapped burned area from MTBS, presented separately from NIFC all-fire totals.",
   },
 ];
 
 function drawHistoryCharts(data, selectedYear) {
   HISTORY_CHARTS.forEach((config) => {
-    makeHistoryChart(config.id, config, historySeries(data, config.series), selectedYear);
+    makeHistoryChart(config.id, { ...config, takeaway: data.derived && data.derived.takeaways && data.derived.takeaways[config.takeawayKey] }, historySeries(data, config.series), selectedYear);
   });
 }
 
-function renderHistory(data) {
+function renderHistory(data, points) {
+  document.getElementById("app-freshness").textContent = data.generated
+    ? new Date(data.generated).toLocaleString()
+    : "historical data";
+  historyPointsData = points;
+  initHistoryMap();
   const derived = data.derived;
   const verdict = document.getElementById("history-verdict");
   if (!derived) {
@@ -658,22 +1021,34 @@ function renderHistory(data) {
   const selectedYear = Math.max(Number(yearInput.min), Math.min(Number(yearInput.max), Number(yearInput.value)));
   yearInput.value = selectedYear;
   renderHistoryYear(data, selectedYear);
+  renderHistoryMap(selectedYear);
   drawHistoryCharts(data, selectedYear);
   renderHistorySources(data);
   yearInput.oninput = () => {
     const year = Number(yearInput.value);
+    if (!historyPlaybackChanging) stopHistoryPlayback();
     renderHistoryYear(data, year);
+    renderHistoryMap(year);
     drawHistoryCharts(data, year);
   };
 }
 
 async function loadHistory() {
   if (!historyPromise) {
-    historyPromise = fetch(`data/longterm.json?v=${Date.now()}`).then((res) => {
-      if (!res.ok) throw new Error(`long-term history request failed: ${res.status}`);
-      return res.json();
-    }).then((data) => {
-      renderHistory(data);
+    historyPromise = Promise.all([
+      fetch(`data/longterm.json?v=${Date.now()}`).then((res) => {
+        if (!res.ok) throw new Error(`longterm.json request failed: ${res.status}`);
+        return res.json();
+      }),
+      fetch(`data/fire_years.json?v=${Date.now()}`).then((res) => {
+        if (!res.ok) throw new Error(`fire_years.json request failed: ${res.status}`);
+        return res.json();
+      }).catch((err) => {
+        console.error("historical map failed", err);
+        return { years: {}, provisional_years: [], metadata: {} };
+      }),
+    ]).then(([data, points]) => {
+      renderHistory(data, points);
       return data;
     });
   }
@@ -689,9 +1064,9 @@ async function loadHistory() {
 
 /* ---- smoke plumes (NOAA HMS, refreshed at build time) ---- */
 const SMOKE_STYLE = {
-  Light: { color: "#cfd8e3", fillOpacity: 0.1, weight: 0.5 },
-  Medium: { color: "#e7d3a8", fillOpacity: 0.18, weight: 0.6 },
-  Heavy: { color: "#e0a06a", fillOpacity: 0.3, weight: 0.8 },
+  Light: { color: themeColor("--smoke-light", "#cfd8e3"), fillOpacity: 0.1, weight: 0.5 },
+  Medium: { color: themeColor("--smoke", "#e7d3a8"), fillOpacity: 0.18, weight: 0.6 },
+  Heavy: { color: themeColor("--smoke-heavy", "#e0a06a"), fillOpacity: 0.3, weight: 0.8 },
 };
 let smokeLayer = null;
 
@@ -815,6 +1190,10 @@ document.getElementById("toggle-fires").addEventListener("change", (e) => {
   if (e.target.checked) fireLayer.addTo(map);
   else map.removeLayer(fireLayer);
 });
+document.getElementById("history-play").addEventListener("click", toggleHistoryPlayback);
+document.querySelectorAll("[data-history-frame]").forEach((button) => {
+  button.addEventListener("click", () => applyHistoryMapFraming(button.dataset.historyFrame));
+});
 
 /* Mobile: panels collapse into toggle chips. */
 document.querySelectorAll("[data-toggle-panel]").forEach((btn) => {
@@ -844,6 +1223,7 @@ function viewFromLocation() {
 }
 
 function applyView(view) {
+  if (view.id !== "then-vs-now") stopHistoryPlayback();
   activeView = view;
   document.body.dataset.view = view.id;
   const updates = document.getElementById("updates-view");
@@ -854,6 +1234,9 @@ function applyView(view) {
     const current = button.dataset.view === view.id;
     button.setAttribute("aria-current", current ? "page" : "false");
   });
+  if (view.id !== "then-vs-now" && summaryGenerated) {
+    document.getElementById("app-freshness").textContent = new Date(summaryGenerated).toLocaleString();
+  }
   view.onEnter();
 }
 

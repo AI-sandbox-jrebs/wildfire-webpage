@@ -10,13 +10,20 @@
 <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-<div id="map" aria-label="Map of active wildfires and rainfall radar"></div>
+<header class="app-bar">
+  <a class="brand" href="#/" aria-label="Wildfire and Rainfall Watch home">
+    <span class="brand-mark" aria-hidden="true">◒</span>
+    <span>Wildfire <em>&amp;</em> Rainfall</span>
+  </a>
+  <nav class="view-nav" aria-label="Site views">
+    <a href="#/" data-view="now" aria-current="page"><span class="nav-icon" aria-hidden="true">◉</span><span>Now</span></a>
+    <a href="#/updates" data-view="updates"><span class="nav-icon" aria-hidden="true">≋</span><span>Updates</span></a>
+    <a href="#/then-vs-now" data-view="then-vs-now"><span class="nav-icon" aria-hidden="true">◌</span><span>Then vs Now</span></a>
+  </nav>
+  <p class="app-freshness">Updated <time id="app-freshness">–</time></p>
+</header>
 
-<nav class="view-nav" aria-label="Site views">
-  <a href="#/" data-view="now" aria-current="page">Now</a>
-  <a href="#/updates" data-view="updates">Updates</a>
-  <a href="#/then-vs-now" data-view="then-vs-now">Then vs Now</a>
-</nav>
+<div id="map" aria-label="Map of active wildfires and rainfall radar"></div>
 
 <nav class="chips" aria-label="Panel toggles">
   <button data-toggle-panel=".panel--head">Stats</button>
@@ -25,7 +32,8 @@
 </nav>
 
 <header class="panel panel--head">
-  <h1>Wildfire <span>&amp;</span> Rainfall</h1>
+  <p class="eyebrow">Live conditions</p>
+  <h1>Current conditions</h1>
   <p class="sub">Active fires with live precipitation radar</p>
   <dl class="stats">
     <div><dt>Fires</dt><dd id="stat-fires">–</dd></div>
@@ -93,6 +101,19 @@
     <p class="updates-view__intro">
       What we changed, why we changed it, and the evidence behind the improvements.
     </p>
+    <section class="verification-panel" aria-labelledby="verification-title">
+      <div class="verification-panel__head">
+        <div>
+          <p class="eyebrow">Machine checks</p>
+          <h2 id="verification-title">Review the published data</h2>
+        </div>
+        <p id="verification-summary" class="verification-summary">Loading checks…</p>
+      </div>
+      <p class="verification-panel__intro">
+        This site is AI-built. Every figure is machine-generated from public federal sources, and corrections are logged here. These checks catch internal inconsistency and implausible values; they cannot certify that an upstream source is correct or that our interpretation is right.
+      </p>
+      <div id="verification-list" class="verification-list"></div>
+    </section>
     <div id="updates-status" class="updates-status" role="status" hidden></div>
     <div id="updates-list" class="updates-list"></div>
   </div>
@@ -115,6 +136,29 @@
       </div>
       <input id="history-year" type="range" min="1983" max="2025" value="2025" step="1" aria-label="Select a year">
       <div id="history-year-facts" class="history-year__facts"></div>
+    </section>
+
+    <section class="history-map-section" aria-labelledby="history-map-title">
+      <div class="history-section-heading">
+        <div>
+          <p class="eyebrow">Geographic view</p>
+          <h2 id="history-map-title">Where mapped wildfires occurred</h2>
+        </div>
+        <div class="history-map-controls">
+          <button id="history-play" type="button" aria-pressed="false">
+            <span aria-hidden="true">▶</span> Play years
+          </button>
+          <div class="history-map-framing" role="group" aria-label="Historical map framing">
+            <button type="button" data-history-frame="lower48" aria-pressed="true">Lower 48</button>
+            <button type="button" data-history-frame="all-states" aria-pressed="false">All states</button>
+          </div>
+          <span id="history-map-status" class="history-map-status" role="status"></span>
+        </div>
+      </div>
+      <div id="history-map" role="region" aria-label="Historical map of mapped MTBS wildfires for the selected year"></div>
+      <p id="history-map-alt" class="history-map-alt"></p>
+      <p class="history-map-geography-note">Counts and acreage totals include Alaska and Hawaii even when the default Lower 48 framing does not show them. Switch to All states to see those fires.</p>
+      <p class="history-map-legend"><span class="history-map-key history-map-key--solid"></span> assessed wildfire <span class="history-map-key history-map-key--provisional"></span> provisional year — still filling in</p>
     </section>
 
     <section class="history-charts" aria-label="Historical charts">

@@ -26,6 +26,21 @@ MTBS_URL = "https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_MTBS_01/MapServe
 LAST_COMPLETE_YEAR = datetime.now(timezone.utc).year - 1
 TOP_TEN_RECENT_YEAR = 2005
 
+# MTBS also maps prescribed burns and "Other" events. Only wildfires belong in a
+# wildfire series, so every MTBS query is scoped to this type.
+MTBS_WILDFIRE_ONLY = "fire_type='Wildfire'"
+MTBS_FIRST_YEAR = 1984
+# MTBS assesses fires a season or two after they burn, so the newest years are
+# still filling in. A year mapping far less area than NIFC reported is treated as
+# provisional rather than as a real decline.
+MTBS_PROVISIONAL_RATIO = 0.6
+POINTS_OUTPUT = DATA_DIR / "fire_years.json"
+POINTS_PAGE_SIZE = 2000
+POINTS_MAX_PAGES = 30
+# Named on the map only where a fire is big enough to be worth identifying; this
+# keeps the payload small enough to ship to phones.
+POINTS_NAME_MIN_ACRES = 10000
+
 SOURCE_META = {
     "nifc": {
         "name": "NIFC annual wildfire statistics",
@@ -79,10 +94,13 @@ SOURCE_META = {
         "landing_page": "https://www.mtbs.gov/direct-download",
         "geography": "United States mapped fire events",
         "units": "acres",
-        "aggregation": "Annual sum of mapped event acreage.",
+        "aggregation": "Annual sum of mapped acreage for events typed as wildfire.",
         "caveats": [
             "A mapped burned-area product with its own size, selection, and assessment criteria.",
             "Not interchangeable with NIFC all-wildland-fire totals; never sum or merge the series.",
+            "Prescribed burns and other non-wildfire events are excluded.",
+            "The ratio to NIFC varies across the full record because MTBS maps only fires above its own size threshold; that methodological difference is separate from recent assessment lag.",
+            "MTBS assesses fires a season or more after they burn, so the newest years are still filling in and are flagged as provisional.",
             "The current year is excluded because it is incomplete.",
         ],
     },
@@ -226,11 +244,71 @@ def parse_mtbs(payload, end_year):
         year = attrs.get("year")
         acres = attrs.get("acres_sum")
         if isinstance(year, int) and year <= end_year and isinstance(acres, (int, float)):
-            records.append({"year": year, "acres": round(acres), "mapped_events": attrs.get("event_count")})
+            records.append({
+                "year": year,
+                "acres": round(acres),
+                "mapped_events": attrs.get("event_count"),
+                "provisional": False,
+            })
     records.sort(key=lambda record: record["year"])
     if len(records) < 30 or records[0]["year"] != 1984:
         raise ValueError("MTBS response was unexpectedly short")
     return records
+
+
+def parse_mtbs_points(payload, end_year):
+    features = (payload or {}).get("features") if isinstance(payload, dict) else None
+    if not features:
+        raise ValueError("MTBS point response contained no records")
+    points = []
+    for feature in features:
+        attrs = feature.get("attributes", {})
+        if attrs.get("fire_type") and attrs.get("fire_type") != "Wildfire":
+            continue
+        year = attrs.get("year")
+        acres = attrs.get("acres")
+        latitude = attrs.get("latitude")
+        longitude = attrs.get("longitude")
+        if (
+            not isinstance(year, int)
+            or year < MTBS_FIRST_YEAR
+            or year > end_year
+            or not isinstance(acres, (int, float))
+            or not isinstance(latitude, (int, float))
+            or not isinstance(longitude, (int, float))
+            or not (-90 <= latitude <= 90 and -180 <= longitude <= 180)
+        ):
+            continue
+        point = {
+            "year": year,
+            "lat": round(latitude, 3),
+            "lon": round(longitude, 3),
+            "acres": round(acres),
+        }
+        if acres >= POINTS_NAME_MIN_ACRES and attrs.get("fire_name"):
+            point["name"] = attrs["fire_name"]
+        points.append(point)
+    return points
+
+
+def arcgis_payload(raw):
+    payload = json.loads(raw)
+    if isinstance(payload, dict) and isinstance(payload.get("error"), dict):
+        raise RuntimeError(payload["error"].get("message", "ArcGIS upstream error"))
+    return payload
+
+
+def build_fire_years(points, metadata, provisional_years):
+    grouped = {}
+    for point in points:
+        year = point["year"]
+        grouped.setdefault(str(year), []).append({key: value for key, value in point.items() if key != "year"})
+    return {
+        "generated": metadata["last_success"],
+        "metadata": metadata,
+        "provisional_years": sorted(provisional_years),
+        "years": grouped,
+    }
 
 
 def series_metadata(key, source_url, records, last_success):
@@ -250,6 +328,46 @@ def series_metadata(key, source_url, records, last_success):
         meta["baseline"] = round(baseline, 2)
         meta["baseline_period"] = f"{records[0]['year']}–{records[-1]['year']}"
     return meta
+
+
+def points_metadata(source_url, points, last_success):
+    years = sorted({point["year"] for point in points})
+    return {
+        "name": "MTBS wildfire centroids",
+        "source": "MTBS mapped burned area",
+        "url": source_url,
+        "landing_page": SOURCE_META["mtbs"]["landing_page"],
+        "geography": "United States, including Alaska and Hawaii",
+        "units": "fire centroid and acres",
+        "coverage_start": years[0],
+        "coverage_end": years[-1],
+        "aggregation": "One point per MTBS event typed as wildfire; coordinates rounded to 3 decimals.",
+        "caveats": [
+            "Centroids are approximate locations, not fire perimeters.",
+            "Fire names are included only for events at or above 10,000 acres.",
+            "MTBS assesses fires a season or more after they burn; provisional years are marked separately.",
+        ],
+        "last_success": last_success,
+        "status": "ok",
+    }
+
+
+def annotate_mtbs_provisional(output):
+    mtbs = output.get("series", {}).get("mtbs", {}).get("records", [])
+    nifc = {record["year"]: record["acres"] for record in output.get("series", {}).get("nifc", {}).get("records", [])}
+    latest_year = max(nifc) if nifc else None
+    provisional_years = []
+    for record in mtbs:
+        nifc_acres = nifc.get(record["year"])
+        record["provisional"] = bool(
+            latest_year is not None
+            and record["year"] >= latest_year - 2
+            and nifc_acres
+            and record["acres"] < nifc_acres * MTBS_PROVISIONAL_RATIO
+        )
+        if record["provisional"]:
+            provisional_years.append(record["year"])
+    return provisional_years
 
 
 def build_derived(nifc, all_series=None):
@@ -331,6 +449,31 @@ def build_derived(nifc, all_series=None):
             for year in by_year
         },
     }
+    latest_nifc = nifc[-1]
+    result["takeaways"] = {
+        "fire_acres": {
+            "classification": "trend-like",
+            "sentence": (
+                f"NIFC reported {latest_nifc['acres']:,} acres burned in {latest_nifc['year']}; "
+                f"average annual acreage rose from {round(sum(r['acres'] for r in nifc if r['year'] <= 1989) / len([r for r in nifc if r['year'] <= 1989])):,} acres in {decades[0]['label']} "
+                f"to {round(sum(r['acres'] for r in recent) / len(recent)):,} acres in {decades[-1]['label']}."
+            ),
+        },
+        "fire_size": {
+            "classification": "trend-like",
+            "sentence": (
+                f"The average fire grew from {round(early_size, 1)} acres in {early_count_label} "
+                f"to {round(recent_size, 1)} acres in {recent_count_label}."
+            ),
+        },
+        "fire_counts": {
+            "classification": "natural variability",
+            "sentence": (
+                f"Annual fire counts averaged {round(sum(r['fires'] for r in early) / len(early)):,} in {early_count_label} "
+                f"and {round(sum(r['fires'] for r in recent) / len(recent)):,} in {recent_count_label}; there is no rise."
+            ),
+        },
+    }
     if all_series:
         lookup = {record["year"]: dict(record) for record in nifc}
         for key, field in (("noaa_pcp", "precipitation"), ("noaa_tavg", "temperature"), ("usdm", "drought")):
@@ -355,6 +498,52 @@ def build_derived(nifc, all_series=None):
             for year, values in lookup.items()
             if year in by_year
         }
+        for key, label, field, units, classification in (
+            ("noaa_pcp", "precipitation", "value", "inches", "natural variability"),
+            ("noaa_tavg", "temperature", "value", "°F", "trend-like"),
+            ("usdm", "drought", "value", "%", "natural variability"),
+        ):
+            records = all_series.get(key, {}).get("records", [])
+            if records:
+                early_records = records[: min(20, len(records))]
+                recent_records = records[-min(20, len(records)) :]
+                values = [record[field] for record in records]
+                early_mean = sum(record[field] for record in early_records) / len(early_records)
+                recent_mean = sum(record[field] for record in recent_records) / len(recent_records)
+                early_label = f"{early_records[0]['year']}–{early_records[-1]['year']}"
+                recent_label = f"{recent_records[0]['year']}–{recent_records[-1]['year']}"
+                delta = recent_mean - early_mean
+                if classification == "trend-like":
+                    sentence = (
+                        f"Annual {label} averaged {early_mean:.1f} {units} in {early_label} "
+                        f"and {recent_mean:.1f} {units} in {recent_label}, a change of {delta:+.1f} {units}."
+                    )
+                else:
+                    long_mean = sum(values) / len(values)
+                    sentence = (
+                        f"Annual {label} averaged {recent_mean:.1f} {units} in {recent_label} "
+                        f"versus {long_mean:.1f} {units} across {records[0]['year']}–{records[-1]['year']} "
+                        f"while individual years ranged from {min(values):.1f} to {max(values):.1f} {units}."
+                    )
+                result["takeaways"][label] = {
+                    "classification": classification,
+                    "sentence": sentence,
+                }
+        mtbs_records = all_series.get("mtbs", {}).get("records", [])
+        complete_mtbs = [record for record in mtbs_records if not record.get("provisional")]
+        if complete_mtbs:
+            early_mtbs = complete_mtbs[: min(10, len(complete_mtbs))]
+            recent_mtbs = complete_mtbs[-min(10, len(complete_mtbs)) :]
+            early_mean = sum(record["acres"] for record in early_mtbs) / len(early_mtbs)
+            recent_mean = sum(record["acres"] for record in recent_mtbs) / len(recent_mtbs)
+            result["takeaways"]["mtbs"] = {
+                "classification": "trend-like",
+                "sentence": (
+                    f"MTBS averaged {early_mean:,.0f} mapped acres in {early_mtbs[0]['year']}–{early_mtbs[-1]['year']} "
+                    f"and {recent_mean:,.0f} in {recent_mtbs[0]['year']}–{recent_mtbs[-1]['year']} after excluding provisional years; "
+                    "this is a separate mapped product, not a second NIFC total."
+                ),
+            }
     return result
 
 
@@ -421,7 +610,7 @@ def make_fetchers(end_year):
         separators=(",", ":"),
     )
     mtbs_params = {
-        "where": f"year <= {end_year}",
+        "where": f"{MTBS_WILDFIRE_ONLY} AND year <= {end_year}",
         "outStatistics": mtbs_stats,
         "groupByFieldsForStatistics": "year",
         "orderByFields": "year ASC",
@@ -429,11 +618,46 @@ def make_fetchers(end_year):
         "f": "json",
     }
     mtbs_url = f"{MTBS_URL}?{urlencode(mtbs_params)}"
+
+    point_where = f"{MTBS_WILDFIRE_ONLY} AND year <= {end_year}"
+    point_fields = "fire_name,year,acres,latitude,longitude"
+    canonical_point_url = f"{MTBS_URL}?{urlencode({'where': point_where, 'outFields': point_fields, 'orderByFields': 'objectid', 'returnGeometry': 'false', 'f': 'json'})}"
+    point_count_url = f"{MTBS_URL}?{urlencode({'where': point_where, 'returnCountOnly': 'true', 'f': 'json'})}"
+
+    def fetch_points():
+        count_payload = arcgis_payload(fetch_bytes(point_count_url))
+        expected = count_payload.get("count")
+        if not isinstance(expected, int) or expected < 1000:
+            raise ValueError("MTBS point count was missing or unexpectedly short")
+        points = []
+        for page_number in range(POINTS_MAX_PAGES):
+            params = {
+                "where": point_where,
+                "outFields": point_fields,
+                "orderByFields": "objectid",
+                "resultOffset": page_number * POINTS_PAGE_SIZE,
+                "resultRecordCount": POINTS_PAGE_SIZE,
+                "returnGeometry": "false",
+                "f": "json",
+            }
+            page_url = f"{MTBS_URL}?{urlencode(params)}"
+            page = arcgis_payload(fetch_bytes(page_url))
+            features = page.get("features", [])
+            if not isinstance(features, list) or not features:
+                break
+            points.extend(parse_mtbs_points(page, end_year))
+            if len(points) >= expected:
+                break
+        if len(points) < expected:
+            raise ValueError(f"MTBS point response returned {len(points)} of {expected} events")
+        return points, canonical_point_url
+
     return {
         "nifc": lambda: (parse_nifc_table(fetch_bytes(NIFC_URL, {"User-Agent": "Mozilla/5.0 (history; wildfire-rainfall-map)"}).decode("utf-8", "replace")), NIFC_URL),
         **noaa,
         "usdm": lambda: (parse_usdm_bytes(fetch_bytes(usdm_url)), usdm_url),
-        "mtbs": lambda: (parse_mtbs(json.loads(fetch_bytes(mtbs_url)), end_year), mtbs_url),
+        "mtbs": lambda: (parse_mtbs(arcgis_payload(fetch_bytes(mtbs_url)), end_year), mtbs_url),
+        "points": fetch_points,
     }
 
 
@@ -444,6 +668,10 @@ def main():
     fetchers = make_fetchers(LAST_COMPLETE_YEAR)
     for key in SOURCE_META:
         refresh_source(output, previous, key, fetchers[key], now)
+    provisional_years = annotate_mtbs_provisional(output)
+    if "mtbs" in output["sources"]:
+        output["sources"]["mtbs"]["metadata"]["provisional_years"] = provisional_years
+        output["series"]["mtbs"]["metadata"]["provisional_years"] = provisional_years
 
     nifc = output["series"].get("nifc", {}).get("records")
     if nifc:
@@ -454,6 +682,29 @@ def main():
         print("no historical sources available and no previous longterm.json", file=sys.stderr)
         return 1
     OUTPUT.write_text(json.dumps(output, indent=2) + "\n")
+    previous_points = {}
+    try:
+        previous_points = json.loads(POINTS_OUTPUT.read_text())
+    except (OSError, json.JSONDecodeError):
+        pass
+    try:
+        points, point_url = fetchers["points"]()
+        point_meta = points_metadata(point_url, points, now)
+        fire_years = build_fire_years(points, point_meta, provisional_years)
+        POINTS_OUTPUT.write_text(json.dumps(fire_years, separators=(",", ":")) + "\n")
+    except Exception as exc:  # noqa: BLE001 - preserve the prior point file
+        if previous_points.get("years"):
+            print(f"points: unavailable ({exc}); keeping previous data", file=sys.stderr)
+        else:
+            print(f"points: unavailable ({exc}); no previous point file", file=sys.stderr)
+            return 1
+    try:
+        from verify_data import write_verification
+
+        verification = write_verification(DATA_DIR, now=datetime.fromisoformat(now))
+        print(f"verification: {verification['summary']}")
+    except Exception as exc:  # noqa: BLE001 - verification must not break publishing
+        print(f"verification unavailable: {exc}", file=sys.stderr)
     print(json.dumps(output, indent=2))
     return 0
 

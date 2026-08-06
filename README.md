@@ -16,8 +16,24 @@ build. Contributors should edit the JSON rather than the generated Markdown.
 The **Then vs Now** view uses the long-run history in `data/longterm.json` to
 put current fires in context. It is refreshed weekly by
 `.github/workflows/refresh-history.yml` using `scripts/fetch_history.py`.
-Historical data is optional for deployment: a stale or unavailable refresh
-does not prevent the normal map from building.
+Its geographic map uses the compact, per-year MTBS wildfire centroids in
+`data/fire_years.json`; the map is deliberately separate from the NIFC
+all-fire totals. Historical data is optional for deployment: a stale or
+unavailable refresh does not prevent the normal map from building.
+
+The **Updates** view also publishes `data/verification.json`, a build-time
+report of machine-checkable comparisons over the generated data. Each result
+includes the values compared and clickable source URLs so readers can rerun
+the relevant query. These checks can expose internal inconsistency, malformed
+values, missing provenance, and stale data; they do not certify that an
+upstream source or our interpretation is correct. This is an AI-built site:
+figures are machine-generated from public federal sources, and corrections
+are recorded in the public Updates log.
+
+Theme drift is checked by `scripts/check_theme.py`, which reports hardcoded
+component colours with selectors and line numbers. The browser review also
+checks the shared typography, card, control, focus, and status language across
+all three views; surface brightness is the only intentional difference.
 
 ## Data
 
@@ -29,7 +45,7 @@ does not prevent the normal map from building.
 | Air quality (US AQI, PM2.5) near large fires | [Open-Meteo](https://open-meteo.com/) | at build time |
 | Smoke plumes (light / medium / heavy) | [NOAA HMS](https://www.ospo.noaa.gov/products/land/hms.html) | at build time, daily product |
 | US cities used for smoke exposure | [GeoNames](https://www.geonames.org/) (CC BY 4.0) | static, `scripts/build_cities.py` |
-| Long-term history | NIFC, NOAA NCEI, US Drought Monitor, MTBS | weekly |
+| Long-term history and historical map | NIFC, NOAA NCEI, US Drought Monitor, MTBS | weekly |
 
 No API keys are required.
 
@@ -59,6 +75,24 @@ outside a plume edge. The UI says so.
 python3 -m unittest discover -s scripts -p 'test_*.py'
 ```
 
+For a direct stylesheet check:
+
+```bash
+python3 scripts/check_theme.py
+```
+
+The cross-view computed-style assertion runs in Chromium and compares the
+shared geometry and typography of the Updates and Then vs Now surfaces:
+
+```bash
+python3 scripts/check_theme_browser.py
+```
+
+It uses an explicit property-level allowlist for surface brightness only
+(background, text, border colours, and shadows). A mismatch reports the
+component and CSS property; it is a required part of the browser verification
+sequence rather than an optional visual check.
+
 These cover the places the site computes rather than relays — growth deltas,
 smoke exposure, and the long-term history parser and derived statistics.
 
@@ -77,6 +111,14 @@ Additional guards:
   because a slightly stale map beats no map.
 - Long-term history sources are refreshed independently; a failed source keeps
   its previous good series and records its status in `data/longterm.json`.
+- The historical MTBS point file is refreshed with the same guarded weekly job;
+  a short or failed point response never replaces a good `data/fire_years.json`.
+- Build-time verification results are written to `data/verification.json`;
+  verification failures remain visible on Updates rather than silently
+  making the page look clean.
+- The MTBS/NIFC comparison is calibrated for the products' different
+  measurement methods: modest MTBS excess can be legitimate, while unusually
+  large or widespread excess is flagged as a contamination signal.
 
 ## Rebuild
 
