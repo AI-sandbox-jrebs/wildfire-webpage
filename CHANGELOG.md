@@ -2,6 +2,21 @@
 
 Public record of changes to Wildfire & Rainfall Watch.
 
+## Added a Then vs Now view for historical context
+
+**2026-08-06 · feature**
+
+The live fire map shows what is happening now. This view helps put that danger in context by showing whether today's pattern is genuinely different from the past.
+
+What changed:
+- Fire counts are not rising compared with the 1990s, but the average fire is now about two and a half times larger than in the late 1980s.
+- Every one of the ten largest fire-years in the national record happened after 2000.
+- A year scrubber lets you inspect fires, acres, average fire size, rainfall, temperature, and drought together, with the source limits shown alongside the charts.
+
+> Note: The national fire-count record has incomplete reporting in 1983–84, so those years are flagged rather than treated as a clean baseline.
+
+---
+
 ## Removed stale and prescribed-fire records from the fire totals
 
 **2026-08-06 · correction**

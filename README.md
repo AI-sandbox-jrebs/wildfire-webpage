@@ -13,6 +13,12 @@ improvements, with links to the pull requests behind them. Its source of truth
 is `data/changelog.json`; `CHANGELOG.md` is generated from that JSON during the
 build. Contributors should edit the JSON rather than the generated Markdown.
 
+The **Then vs Now** view uses the long-run history in `data/longterm.json` to
+put current fires in context. It is refreshed weekly by
+`.github/workflows/refresh-history.yml` using `scripts/fetch_history.py`.
+Historical data is optional for deployment: a stale or unavailable refresh
+does not prevent the normal map from building.
+
 ## Data
 
 | Layer | Source | Refreshed |
@@ -23,6 +29,7 @@ build. Contributors should edit the JSON rather than the generated Markdown.
 | Air quality (US AQI, PM2.5) near large fires | [Open-Meteo](https://open-meteo.com/) | at build time |
 | Smoke plumes (light / medium / heavy) | [NOAA HMS](https://www.ospo.noaa.gov/products/land/hms.html) | at build time, daily product |
 | US cities used for smoke exposure | [GeoNames](https://www.geonames.org/) (CC BY 4.0) | static, `scripts/build_cities.py` |
+| Long-term history | NIFC, NOAA NCEI, US Drought Monitor, MTBS | weekly |
 
 No API keys are required.
 
@@ -52,8 +59,8 @@ outside a plume edge. The UI says so.
 python3 -m unittest discover -s scripts -p 'test_*.py'
 ```
 
-These cover the two places the site computes rather than relays — growth deltas
-and smoke exposure.
+These cover the places the site computes rather than relays — growth deltas,
+smoke exposure, and the long-term history parser and derived statistics.
 
 ## Reliability
 
@@ -68,6 +75,8 @@ Additional guards:
 - An empty fire list never overwrites good data; the previous snapshot is kept.
 - If WFIGS is unavailable the deploy still succeeds with the previous data,
   because a slightly stale map beats no map.
+- Long-term history sources are refreshed independently; a failed source keeps
+  its previous good series and records its status in `data/longterm.json`.
 
 ## Rebuild
 

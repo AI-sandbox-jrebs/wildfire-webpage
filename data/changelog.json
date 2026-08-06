@@ -1,6 +1,18 @@
 [
   {
     "date": "2026-08-06",
+    "kind": "feature",
+    "title": "Added a Then vs Now view for historical context",
+    "summary": "The live fire map shows what is happening now. This view helps put that danger in context by showing whether today's pattern is genuinely different from the past.",
+    "details": [
+      "Fire counts are not rising compared with the 1990s, but the average fire is now about two and a half times larger than in the late 1980s.",
+      "Every one of the ten largest fire-years in the national record happened after 2000.",
+      "A year scrubber lets you inspect fires, acres, average fire size, rainfall, temperature, and drought together, with the source limits shown alongside the charts."
+    ],
+    "note": "The national fire-count record has incomplete reporting in 1983–84, so those years are flagged rather than treated as a clean baseline."
+  },
+  {
+    "date": "2026-08-06",
     "kind": "correction",
     "title": "Removed stale and prescribed-fire records from the fire totals",
     "summary": "The headline was overstating current fire activity by about a third. Roughly 35% of the acreage we reported as burning came from a feed that never closed out old fires and did not distinguish wildfires from deliberate controlled burns. That data is gone.",
