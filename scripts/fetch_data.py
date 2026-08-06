@@ -15,7 +15,10 @@ from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
+from build_changelog import generate_changelog
+
 DATA_DIR = pathlib.Path(__file__).resolve().parent.parent / "data"
+ROOT_DIR = DATA_DIR.parent
 WFIGS_URL = (
     "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/"
     "WFIGS_Incident_Locations_Current/FeatureServer/0/query"
@@ -550,6 +553,11 @@ def optional(name, status, fn, default=None):
 
 def main():
     DATA_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        generate_changelog(DATA_DIR / "changelog.json", ROOT_DIR / "CHANGELOG.md")
+    except ValueError as exc:
+        print(f"changelog validation failed: {exc}", file=sys.stderr)
+        return 1
     now = datetime.now(timezone.utc)
     status = {}
 

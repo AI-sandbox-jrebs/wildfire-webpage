@@ -12,6 +12,11 @@
 <body>
 <div id="map" aria-label="Map of active wildfires and rainfall radar"></div>
 
+<nav class="view-nav" aria-label="Site views">
+  <a href="#/" data-view="now" aria-current="page">Now</a>
+  <a href="#/updates" data-view="updates">Updates</a>
+</nav>
+
 <nav class="chips" aria-label="Panel toggles">
   <button data-toggle-panel=".panel--head">Stats</button>
   <button data-toggle-panel=".panel--legend">Layers</button>
@@ -79,6 +84,18 @@
   <a href="https://www.ospo.noaa.gov/products/land/hms.html">NOAA HMS</a> · Cities:
   <a href="https://www.geonames.org/">GeoNames</a>
 </footer>
+
+<main id="updates-view" class="updates-view" aria-labelledby="updates-title" hidden>
+  <div class="updates-view__inner">
+    <p class="eyebrow">Public record</p>
+    <h1 id="updates-title">Updates</h1>
+    <p class="updates-view__intro">
+      What we changed, why we changed it, and the evidence behind the improvements.
+    </p>
+    <div id="updates-status" class="updates-status" role="status" hidden></div>
+    <div id="updates-list" class="updates-list"></div>
+  </div>
+</main>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="app.js"></script>

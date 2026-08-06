@@ -6,6 +6,13 @@ overlay and per-fire precipitation history.
 
 ![screenshot](docs/screenshot.png)
 
+## Updates
+
+The **Updates** view is a public record of corrections, fixes, features, and
+improvements, with links to the pull requests behind them. Its source of truth
+is `data/changelog.json`; `CHANGELOG.md` is generated from that JSON during the
+build. Contributors should edit the JSON rather than the generated Markdown.
+
 ## Data
 
 | Layer | Source | Refreshed |
