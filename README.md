@@ -6,12 +6,18 @@ overlay and per-fire precipitation history.
 
 ![screenshot](docs/screenshot.png)
 
+## Updates
+
+The **Updates** view is a public record of corrections, fixes, features, and
+improvements, with links to the pull requests behind them. Its source of truth
+is `data/changelog.json`; `CHANGELOG.md` is generated from that JSON during the
+build. Contributors should edit the JSON rather than the generated Markdown.
+
 ## Data
 
 | Layer | Source | Refreshed |
 | --- | --- | --- |
-| US incidents (>=100 acres) | [NIFC WFIGS](https://data-nifc.opendata.arcgis.com/) | at build time |
-| Global wildfire events | [NASA EONET](https://eonet.gsfc.nasa.gov/) | at build time |
+| US incidents (>=10 acres) | [NIFC WFIGS](https://data-nifc.opendata.arcgis.com/) | at build time |
 | Precipitation, past 7 d + 3 d forecast | [Open-Meteo](https://open-meteo.com/) | at build time |
 | Rainfall radar tiles (last 2 h, animated) | [RainViewer](https://www.rainviewer.com/) | live in the browser |
 | Air quality (US AQI, PM2.5) near large fires | [Open-Meteo](https://open-meteo.com/) | at build time |
@@ -51,7 +57,7 @@ and smoke exposure.
 
 ## Reliability
 
-Every source except WFIGS is optional: if it fails the build records the failure
+Every enrichment source except WFIGS is optional: if it fails the build records the failure
 in `data/summary.json` under `sources` and the page renders without that layer.
 Additional guards:
 

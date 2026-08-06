@@ -189,7 +189,7 @@ function popupHtml(p) {
   }
   return `<div class="pop">
     <h3>${p.name}</h3>
-    <div class="where">${p.state ? p.state + " · " : ""}${p.source === "WFIGS" ? "NIFC incident" : "NASA EONET event"}</div>
+    <div class="where">${p.state ? p.state + " · " : ""}NIFC incident</div>
     ${growthSummary(p)}
     ${growthChart(p.growth)}
     ${aqiHtml}
@@ -303,6 +303,8 @@ async function loadSummary() {
   document.getElementById("stat-acres").textContent =
     s.total_acres >= 1e6 ? `${(s.total_acres / 1e6).toFixed(1)}M` : nf.format(s.total_acres);
   document.getElementById("stat-dry").textContent = nf.format(s.dry_fire_count);
+  document.getElementById("stat-dry-scope").textContent =
+    `of ${nf.format(s.rainfall_sampled)} largest fires`;
   document.getElementById("stat-updated").textContent = new Date(s.generated).toLocaleString();
 
   if (s.smoke && s.smoke.city_count) {
@@ -327,6 +329,77 @@ async function loadSummary() {
     document.getElementById("growth-headline").textContent = "Growth tracking is warming up";
     document.getElementById("growth-note").textContent =
       `Recording since ${new Date(s.history_since).toLocaleDateString()}; 24 h comparisons appear once two snapshots exist.`;
+  }
+}
+
+/* ---- public updates view ---- */
+let changelogPromise = null;
+
+function textNode(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  node.textContent = text;
+  return node;
+}
+
+function renderUpdates(entries) {
+  const list = document.getElementById("updates-list");
+  list.replaceChildren();
+  entries.forEach((entry) => {
+    const card = document.createElement("article");
+    card.className = `update-card update-card--${entry.kind}`;
+
+    const top = document.createElement("div");
+    top.className = "update-card__top";
+    top.append(textNode("time", "", entry.date), textNode("span", `update-kind update-kind--${entry.kind}`, entry.kind));
+    card.append(top, textNode("h2", "", entry.title), textNode("p", "update-card__summary", entry.summary));
+
+    if (entry.impact) {
+      const impact = document.createElement("dl");
+      impact.className = "update-impact";
+      [["Before", entry.impact.before], ["After", entry.impact.after]].forEach(([label, value]) => {
+        const box = document.createElement("div");
+        box.append(textNode("dt", "", label), textNode("dd", "", value));
+        impact.append(box);
+      });
+      card.append(impact);
+    }
+
+    const details = document.createElement("ul");
+    entry.details.forEach((detail) => details.append(textNode("li", "", detail)));
+    card.append(details);
+
+    if (entry.note) card.append(textNode("p", "update-card__note", entry.note));
+    if (entry.pr) {
+      const link = document.createElement("a");
+      link.className = "update-card__audit";
+      link.href = `https://github.com/AI-sandbox-jrebs/wildfire-webpage/pull/${entry.pr}`;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = `Inspect pull request #${entry.pr}`;
+      card.append(link);
+    }
+    list.append(card);
+  });
+}
+
+async function loadUpdates() {
+  if (!changelogPromise) {
+    changelogPromise = fetch(`data/changelog.json?v=${Date.now()}`).then((res) => {
+      if (!res.ok) throw new Error(`changelog request failed: ${res.status}`);
+      return res.json();
+    }).then((entries) => {
+      renderUpdates(entries);
+      return entries;
+    });
+  }
+  try {
+    await changelogPromise;
+  } catch (err) {
+    console.error("updates failed", err);
+    const status = document.getElementById("updates-status");
+    status.hidden = false;
+    status.textContent = "Updates are temporarily unavailable. Please try again later.";
   }
 }
 
@@ -473,6 +546,46 @@ document.querySelectorAll("[data-toggle-panel]").forEach((btn) => {
       .forEach((b) => b !== btn && b.classList.remove("active"));
   });
 });
+
+const VIEW_DEFS = [
+  { id: "now", hash: "", onEnter: () => requestAnimationFrame(() => map.invalidateSize()) },
+  { id: "updates", hash: "updates", onEnter: loadUpdates },
+];
+const viewByHash = new Map(VIEW_DEFS.map((view) => [view.hash, view]));
+let activeView = null;
+
+function viewFromLocation() {
+  return viewByHash.get(location.hash.replace(/^#\/?/, "")) || VIEW_DEFS[0];
+}
+
+function applyView(view) {
+  activeView = view;
+  document.body.dataset.view = view.id;
+  const updates = document.getElementById("updates-view");
+  updates.hidden = view.id !== "updates";
+  document.querySelectorAll(".view-nav [data-view]").forEach((button) => {
+    const current = button.dataset.view === view.id;
+    button.setAttribute("aria-current", current ? "page" : "false");
+  });
+  view.onEnter();
+}
+
+function navigateView(id) {
+  const view = VIEW_DEFS.find((candidate) => candidate.id === id) || VIEW_DEFS[0];
+  const hash = `#/${view.hash}`;
+  if (location.hash !== hash) history.pushState({}, "", hash);
+  applyView(view);
+}
+
+document.querySelectorAll(".view-nav [data-view]").forEach((button) => {
+  button.addEventListener("click", (event) => {
+    event.preventDefault();
+    navigateView(button.dataset.view);
+  });
+});
+window.addEventListener("hashchange", () => applyView(viewFromLocation()));
+window.addEventListener("popstate", () => applyView(viewFromLocation()));
+applyView(viewFromLocation());
 
 loadFires().catch((err) => {
   console.error("fires failed", err);

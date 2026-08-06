@@ -22,6 +22,69 @@ html, body {
 
 #map { position: absolute; inset: 0; background: var(--bg); }
 
+.view-nav {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  display: flex;
+  gap: 4px;
+  z-index: 650;
+  padding: 4px;
+  border: 1px solid var(--stroke);
+  border-radius: 999px;
+  background: rgba(12, 18, 28, 0.78);
+  backdrop-filter: blur(14px);
+  transform: translateX(-50%);
+}
+.view-nav a {
+  padding: 6px 14px;
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 650;
+  text-decoration: none;
+}
+.view-nav a[aria-current="page"] { background: var(--rain); color: #07121b; }
+
+.updates-view {
+  position: fixed;
+  inset: 0;
+  overflow: auto;
+  background:
+    radial-gradient(circle at 15% 0%, rgba(76, 201, 240, 0.12), transparent 34rem),
+    var(--bg);
+}
+.updates-view__inner { width: min(760px, calc(100% - 36px)); margin: 0 auto; padding: 92px 0 54px; }
+.eyebrow { margin: 0 0 4px; color: var(--rain); font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
+.updates-view h1 { margin: 0; font-size: 34px; letter-spacing: -0.03em; }
+.updates-view__intro { max-width: 560px; margin: 8px 0 30px; color: var(--muted); font-size: 14px; }
+.updates-status { padding: 14px 16px; border: 1px solid rgba(255, 120, 80, 0.5); border-radius: 12px; color: #ffd9c7; background: rgba(40, 16, 12, 0.75); }
+.updates-list { display: grid; gap: 16px; }
+.update-card { padding: 20px 22px; border: 1px solid var(--stroke); border-radius: 16px; background: rgba(12, 18, 28, 0.78); box-shadow: 0 14px 30px rgba(0, 0, 0, 0.2); }
+.update-card--correction { border-color: rgba(255, 106, 43, 0.55); box-shadow: 0 14px 30px rgba(255, 106, 43, 0.08); }
+.update-card__top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 9px; }
+.update-card time { color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.update-kind { padding: 3px 8px; border-radius: 999px; color: #07121b; font-size: 10px; font-weight: 750; letter-spacing: 0.08em; text-transform: uppercase; }
+.update-kind--correction { background: var(--fire-hot); }
+.update-kind--fix { background: #ff9e3d; }
+.update-kind--feature { background: var(--rain); }
+.update-kind--improvement { background: #a7e8c5; }
+.update-card h2 { margin: 0 0 8px; font-size: 19px; line-height: 1.25; }
+.update-card__summary { margin: 0 0 14px; color: var(--text); line-height: 1.55; }
+.update-card ul { margin: 0; padding-left: 20px; color: var(--muted); }
+.update-card li { margin: 7px 0; line-height: 1.5; }
+.update-impact { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0; }
+.update-impact div { padding: 11px 12px; border-radius: 10px; background: rgba(255, 255, 255, 0.05); }
+.update-impact dt { color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+.update-impact dd { margin: 4px 0 0; color: var(--fire-hot); font-size: 17px; font-weight: 700; }
+.update-card__note { margin: 16px 0 0; padding-left: 12px; border-left: 2px solid var(--rain); color: var(--muted); font-size: 12.5px; line-height: 1.5; }
+.update-card__audit { display: inline-block; margin-top: 16px; color: var(--rain); font-size: 12px; font-weight: 650; }
+body[data-view="updates"] #map,
+body[data-view="updates"] .panel,
+body[data-view="updates"] .chips,
+body[data-view="updates"] .credit { display: none; }
+body[data-view="now"] .updates-view { display: none; }
+
 .panel {
   position: absolute;
   z-index: 500;
@@ -48,6 +111,7 @@ html, body {
 
 .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0; }
 .stats dt { color: var(--muted); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.07em; }
+.stats dt small { display: block; font-size: 8.5px; line-height: 1.15; letter-spacing: 0; text-transform: none; white-space: nowrap; }
 .stats dd { margin: 2px 0 0; font-size: 19px; font-weight: 650; font-variant-numeric: tabular-nums; }
 .updated { margin: 12px 0 0; font-size: 11.5px; color: var(--muted); }
 
@@ -207,6 +271,7 @@ html, body {
     right: 10px;
     z-index: 600;
   }
+  .view-nav { top: calc(58px + env(safe-area-inset-top)); }
   .chips button {
     flex: 1;
     padding: 9px 0;
@@ -239,4 +304,10 @@ html, body {
 
   .credit { left: 10px; right: 10px; bottom: 2px; text-align: center; }
   .leaflet-control-zoom { display: none; }
+  .updates-view__inner { width: min(100% - 20px, 620px); padding-top: 120px; }
+  .updates-view h1 { font-size: 30px; }
+  .update-card { padding: 17px 16px; }
+  .update-card__top { align-items: flex-start; }
+  .update-card h2 { font-size: 17px; }
+  .update-impact dd { font-size: 15px; }
 }
