@@ -15,11 +15,13 @@ from fetch_history import (
     refresh_source,
 )
 
+FIXTURES = Path(__file__).parent / "fixtures"
+
 
 class HistoryTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.sample = Path("/home/ubuntu/histdata/nifc_stats_html.sample.html").read_text()
+        cls.sample = (FIXTURES / "nifc_stats.sample.html").read_text()
 
     def test_nifc_sample_table_parses(self):
         records = parse_nifc_table(self.sample)
