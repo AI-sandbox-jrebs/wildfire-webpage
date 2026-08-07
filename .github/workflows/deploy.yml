@@ -27,6 +27,8 @@ jobs:
           python-version: "3.12"
       - name: Test derived figures
         run: python -m unittest discover -s scripts -p 'test_*.py' -v
+      - name: Lint theme tokens
+        run: python scripts/check_theme.py
       - name: Refresh wildfire + rainfall data
         run: python scripts/fetch_data.py
       # Growth is measured against snapshots from previous runs, so the history
