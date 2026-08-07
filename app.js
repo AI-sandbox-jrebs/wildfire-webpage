@@ -613,9 +613,11 @@ async function loadUpdates() {
 let historyPromise = null;
 let historyMap = null;
 let historyMapLayer = null;
+let historyMapResizeObserver = null;
 let historyPointsData = null;
 let historyPlayTimer = null;
 let historyPlaybackChanging = false;
+let historyMapUserControlled = false;
 let historyMapFraming = "lower48";
 const HISTORY_MAP_BOUNDS = {
   lower48: [[24, -126], [50, -66]],
@@ -805,6 +807,7 @@ function initHistoryMap() {
     zoom: window.innerWidth <= 600 ? 2.5 : 3,
     minZoom: 2,
     maxZoom: 8,
+    zoomSnap: 0,
     zoomControl: true,
     preferCanvas: true,
     worldCopyJump: true,
@@ -814,14 +817,32 @@ function initHistoryMap() {
     maxZoom: 8,
   }).addTo(historyMap);
   historyMapLayer = L.layerGroup().addTo(historyMap);
+  // Detect real input rather than Leaflet move events, which fire for our own
+  // fitBounds calls too and cannot be told apart from a drag after the fact.
+  const container = historyMap.getContainer();
+  ["pointerdown", "touchstart", "wheel", "dblclick", "keydown"].forEach((type) => {
+    container.addEventListener(type, () => {
+      historyMapUserControlled = true;
+    }, { passive: true });
+  });
+  historyMapResizeObserver = new ResizeObserver((entries) => {
+    const entry = entries[0];
+    if (!entry || !entry.contentRect.width || !entry.contentRect.height) return;
+    requestAnimationFrame(() => {
+      historyMap.invalidateSize({ pan: false });
+      if (!historyMapUserControlled) applyHistoryMapFraming(historyMapFraming);
+    });
+  });
+  historyMapResizeObserver.observe(document.getElementById("history-map"));
   requestAnimationFrame(() => {
     historyMap.invalidateSize();
-    applyHistoryMapFraming(historyMapFraming);
+    if (!historyMapUserControlled) applyHistoryMapFraming(historyMapFraming);
   });
 }
 
-function applyHistoryMapFraming(framing) {
+function applyHistoryMapFraming(framing, { manual = false } = {}) {
   if (!historyMap || !HISTORY_MAP_BOUNDS[framing]) return;
+  if (manual) historyMapUserControlled = false;
   historyMapFraming = framing;
   historyMap.fitBounds(HISTORY_MAP_BOUNDS[framing], { padding: [10, 10] });
   document.querySelectorAll("[data-history-frame]").forEach((button) => {
@@ -1192,28 +1213,57 @@ document.getElementById("toggle-fires").addEventListener("change", (e) => {
 });
 document.getElementById("history-play").addEventListener("click", toggleHistoryPlayback);
 document.querySelectorAll("[data-history-frame]").forEach((button) => {
-  button.addEventListener("click", () => applyHistoryMapFraming(button.dataset.historyFrame));
+  button.addEventListener("click", () => applyHistoryMapFraming(button.dataset.historyFrame, { manual: true }));
 });
 
 /* Mobile: panels collapse into toggle chips. */
+function setPanelOpen(panel, open, trigger) {
+  panel.classList.toggle("open", open);
+  if (trigger) {
+    trigger.classList.toggle("active", open);
+    trigger.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+}
+
+function refreshHistoryMapLayout() {
+  if (!historyMap) return;
+  requestAnimationFrame(() => {
+    historyMap.invalidateSize({ pan: false });
+    if (!historyMapUserControlled) applyHistoryMapFraming(historyMapFraming);
+  });
+}
+
 document.querySelectorAll("[data-toggle-panel]").forEach((btn) => {
   btn.addEventListener("click", () => {
     const panel = document.querySelector(btn.dataset.togglePanel);
-    const open = panel.classList.toggle("open");
+    const open = !panel.classList.contains("open");
     document
       .querySelectorAll(".panel.open")
-      .forEach((p) => p !== panel && p.classList.remove("open"));
-    btn.classList.toggle("active", open);
-    document
-      .querySelectorAll("[data-toggle-panel]")
-      .forEach((b) => b !== btn && b.classList.remove("active"));
+      .forEach((p) => {
+        if (p === panel) return;
+        const otherTrigger = [...document.querySelectorAll("[data-toggle-panel]")]
+          .find((candidate) => document.querySelector(candidate.dataset.togglePanel) === p);
+        setPanelOpen(p, false, otherTrigger);
+      });
+    setPanelOpen(panel, open, btn);
+  });
+});
+document.querySelectorAll("[data-close-panel]").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const panel = document.querySelector(btn.dataset.closePanel);
+    const trigger = document.querySelector(`[data-toggle-panel="${btn.dataset.closePanel}"]`);
+    setPanelOpen(panel, false, trigger);
+    trigger?.focus();
   });
 });
 
 const VIEW_DEFS = [
   { id: "now", hash: "", onEnter: () => requestAnimationFrame(() => map.invalidateSize()) },
   { id: "updates", hash: "updates", onEnter: loadUpdates },
-  { id: "then-vs-now", hash: "then-vs-now", onEnter: loadHistory },
+  { id: "then-vs-now", hash: "then-vs-now", onEnter: () => {
+    refreshHistoryMapLayout();
+    return loadHistory();
+  } },
 ];
 const viewByHash = new Map(VIEW_DEFS.map((view) => [view.hash, view]));
 let activeView = null;
