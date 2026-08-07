@@ -18,7 +18,7 @@
   <nav class="view-nav" aria-label="Site views">
     <a href="#/" data-view="now" aria-current="page"><span class="nav-icon" aria-hidden="true">◉</span><span>Now</span></a>
     <a href="#/updates" data-view="updates"><span class="nav-icon" aria-hidden="true">≋</span><span>Updates</span></a>
-    <a href="#/then-vs-now" data-view="then-vs-now"><span class="nav-icon" aria-hidden="true">◌</span><span>Then vs Now</span></a>
+    <a href="#/then-vs-now" data-view="then-vs-now"><span class="nav-icon" aria-hidden="true">↺</span><span>Then vs Now</span></a>
   </nav>
   <p class="app-freshness">Updated <time id="app-freshness">–</time></p>
 </header>
@@ -26,12 +26,13 @@
 <div id="map" aria-label="Map of active wildfires and rainfall radar"></div>
 
 <nav class="chips" aria-label="Panel toggles">
-  <button data-toggle-panel=".panel--head">Stats</button>
-  <button data-toggle-panel=".panel--legend">Layers</button>
-  <button data-toggle-panel=".panel--list">Fires</button>
+  <button data-toggle-panel=".panel--head" aria-expanded="false">Stats</button>
+  <button data-toggle-panel=".panel--legend" aria-expanded="false">Layers</button>
+  <button data-toggle-panel=".panel--list" aria-expanded="false">Fires</button>
 </nav>
 
 <header class="panel panel--head">
+  <button class="panel-close" type="button" data-close-panel=".panel--head" aria-label="Close stats panel">×</button>
   <p class="eyebrow">Live conditions</p>
   <h1>Current conditions</h1>
   <p class="sub">Active fires with live precipitation radar</p>
@@ -55,6 +56,7 @@
 </header>
 
 <section class="panel panel--legend">
+  <button class="panel-close" type="button" data-close-panel=".panel--legend" aria-label="Close layers panel">×</button>
   <div class="legend-row">
     <span class="legend-title">Fire size</span>
     <span class="dots"><i class="dot dot--s"></i><i class="dot dot--m"></i><i class="dot dot--l"></i></span>
@@ -78,6 +80,7 @@
 </section>
 
 <section class="panel panel--list" aria-label="Active fires">
+  <button class="panel-close" type="button" data-close-panel=".panel--list" aria-label="Close fires panel">×</button>
   <div class="tabs" role="tablist">
     <button role="tab" data-sort="acres" class="active" aria-selected="true">Largest</button>
     <button role="tab" data-sort="growth" aria-selected="false">Fastest growing</button>

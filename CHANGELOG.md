@@ -2,6 +2,21 @@
 
 Public record of changes to Wildfire & Rainfall Watch.
 
+## Fixed mobile history framing and sheet dismissal
+
+**2026-08-07 · correction**
+
+An iPhone report uncovered several mobile presentation and interaction defects in the history and Now views; the affected layouts and controls now behave as intended.
+
+What changed:
+- The historical map's mobile mis-framing had two independent causes: a mobile CSS offset intended only for the full-screen Now map was lifting the history attribution into the tiles, and the history map could fit before layout settled while Leaflet's default integer zoom snapping rejected the fractional zoom needed by a narrow phone container.
+- Stats, Layers, and Fires sheets now have explicit close buttons, their opening chips toggle them closed, and closing a sheet returns focus to the chip so the map is unobstructed and keyboard users have a clear path out.
+- The Then vs Now tab now uses a common history glyph instead of the U+25CC dotted-circle placeholder, which rendered poorly at tab size on iOS.
+
+> Note: This correction was reported from an iPhone. The theme checks continued to pass because they compare computed geometry and typography across views; these defects were not in that check's scope.
+
+---
+
 ## Added automated cross-view theme checks
 
 **2026-08-06 · improvement**
