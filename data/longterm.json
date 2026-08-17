@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-10T05:48:45+00:00",
+  "generated": "2026-08-17T05:02:06+00:00",
   "series": {
     "nifc": {
       "metadata": {
@@ -17,7 +17,7 @@
         "url": "https://www.nifc.gov/fire-information/statistics/wildfires",
         "coverage_start": 1983,
         "coverage_end": 2025,
-        "last_success": "2026-08-10T05:48:45+00:00",
+        "last_success": "2026-08-17T05:02:06+00:00",
         "status": "ok"
       },
       "records": [
@@ -338,7 +338,7 @@
         "url": "https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/national/time-series/110/pcp/12/12/1895-2025.json",
         "coverage_start": 1895,
         "coverage_end": 2025,
-        "last_success": "2026-08-10T05:48:45+00:00",
+        "last_success": "2026-08-17T05:02:06+00:00",
         "status": "ok",
         "baseline": 30.08,
         "baseline_period": "1895\u20132025"
@@ -996,8 +996,8 @@
         },
         {
           "year": 2025,
-          "value": 29.25,
-          "anomaly": -0.83
+          "value": 29.26,
+          "anomaly": -0.82
         }
       ]
     },
@@ -1015,7 +1015,7 @@
         "url": "https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/national/time-series/110/tavg/12/12/1895-2025.json",
         "coverage_start": 1895,
         "coverage_end": 2025,
-        "last_success": "2026-08-10T05:48:45+00:00",
+        "last_success": "2026-08-17T05:02:06+00:00",
         "status": "ok"
       },
       "records": [
@@ -1559,7 +1559,7 @@
         "url": "https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/national/time-series/110/zndx/12/12/1895-2025.json",
         "coverage_start": 1895,
         "coverage_end": 2025,
-        "last_success": "2026-08-10T05:48:45+00:00",
+        "last_success": "2026-08-17T05:02:06+00:00",
         "status": "ok"
       },
       "records": [
@@ -2104,7 +2104,7 @@
         "url": "https://usdmdataservices.unl.edu/api/USStatistics/GetBasicStatisticsByAreaPercent?aoi=CONUS&dx=1&DxLevelThresholdFrom=0&DxLevelThresholdTo=100&startdate=1%2F1%2F2000&enddate=12%2F31%2F2025&statisticsType=1",
         "coverage_start": 2000,
         "coverage_end": 2025,
-        "last_success": "2026-08-10T05:48:45+00:00",
+        "last_success": "2026-08-17T05:02:06+00:00",
         "status": "ok"
       },
       "records": [
@@ -2233,7 +2233,7 @@
         "url": "https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_MTBS_01/MapServer/63/query?where=fire_type%3D%27Wildfire%27+AND+year+%3C%3D+2025&outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22objectid%22%2C%22outStatisticFieldName%22%3A%22event_count%22%7D%2C%7B%22statisticType%22%3A%22sum%22%2C%22onStatisticField%22%3A%22acres%22%2C%22outStatisticFieldName%22%3A%22acres_sum%22%7D%5D&groupByFieldsForStatistics=year&orderByFields=year+ASC&returnGeometry=false&f=json",
         "coverage_start": 1984,
         "coverage_end": 2025,
-        "last_success": "2026-08-10T05:48:45+00:00",
+        "last_success": "2026-08-17T05:02:06+00:00",
         "status": "ok",
         "provisional_years": [
           2025
@@ -2278,7 +2278,7 @@
         },
         {
           "year": 1990,
-          "acres": 2474978,
+          "acres": 2474014,
           "mapped_events": 219,
           "provisional": false
         },
@@ -2344,8 +2344,8 @@
         },
         {
           "year": 2001,
-          "acres": 2443075,
-          "mapped_events": 437,
+          "acres": 2517184,
+          "mapped_events": 438,
           "provisional": false
         },
         {
@@ -2482,7 +2482,7 @@
         },
         {
           "year": 2024,
-          "acres": 6434143,
+          "acres": 6533059,
           "mapped_events": 411,
           "provisional": false
         },
@@ -2498,7 +2498,7 @@
   "sources": {
     "nifc": {
       "status": "ok",
-      "last_success": "2026-08-10T05:48:45+00:00",
+      "last_success": "2026-08-17T05:02:06+00:00",
       "metadata": {
         "name": "NIFC annual wildfire statistics",
         "landing_page": "https://www.nifc.gov/fire-information/statistics/wildfires",
@@ -2514,13 +2514,13 @@
         "url": "https://www.nifc.gov/fire-information/statistics/wildfires",
         "coverage_start": 1983,
         "coverage_end": 2025,
-        "last_success": "2026-08-10T05:48:45+00:00",
+        "last_success": "2026-08-17T05:02:06+00:00",
         "status": "ok"
       }
     },
     "noaa_pcp": {
       "status": "ok",
-      "last_success": "2026-08-10T05:48:45+00:00",
+      "last_success": "2026-08-17T05:02:06+00:00",
       "metadata": {
         "name": "NOAA NCEI Climate at a Glance precipitation",
         "landing_page": "https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/national",
@@ -2534,7 +2534,7 @@
         "url": "https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/national/time-series/110/pcp/12/12/1895-2025.json",
         "coverage_start": 1895,
         "coverage_end": 2025,
-        "last_success": "2026-08-10T05:48:45+00:00",
+        "last_success": "2026-08-17T05:02:06+00:00",
         "status": "ok",
         "baseline": 30.08,
         "baseline_period": "1895\u20132025"
@@ -2542,7 +2542,7 @@
     },
     "noaa_tavg": {
       "status": "ok",
-      "last_success": "2026-08-10T05:48:45+00:00",
+      "last_success": "2026-08-17T05:02:06+00:00",
       "metadata": {
         "name": "NOAA NCEI Climate at a Glance average temperature",
         "landing_page": "https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/national",
@@ -2556,13 +2556,13 @@
         "url": "https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/national/time-series/110/tavg/12/12/1895-2025.json",
         "coverage_start": 1895,
         "coverage_end": 2025,
-        "last_success": "2026-08-10T05:48:45+00:00",
+        "last_success": "2026-08-17T05:02:06+00:00",
         "status": "ok"
       }
     },
     "noaa_zndx": {
       "status": "ok",
-      "last_success": "2026-08-10T05:48:45+00:00",
+      "last_success": "2026-08-17T05:02:06+00:00",
       "metadata": {
         "name": "NOAA NCEI Climate at a Glance Palmer Z-Index",
         "landing_page": "https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/national",
@@ -2576,13 +2576,13 @@
         "url": "https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/national/time-series/110/zndx/12/12/1895-2025.json",
         "coverage_start": 1895,
         "coverage_end": 2025,
-        "last_success": "2026-08-10T05:48:45+00:00",
+        "last_success": "2026-08-17T05:02:06+00:00",
         "status": "ok"
       }
     },
     "usdm": {
       "status": "ok",
-      "last_success": "2026-08-10T05:48:45+00:00",
+      "last_success": "2026-08-17T05:02:06+00:00",
       "metadata": {
         "name": "U.S. Drought Monitor",
         "landing_page": "https://droughtmonitor.unl.edu/DmData/DataDownload/WebServiceInfo.aspx",
@@ -2597,13 +2597,13 @@
         "url": "https://usdmdataservices.unl.edu/api/USStatistics/GetBasicStatisticsByAreaPercent?aoi=CONUS&dx=1&DxLevelThresholdFrom=0&DxLevelThresholdTo=100&startdate=1%2F1%2F2000&enddate=12%2F31%2F2025&statisticsType=1",
         "coverage_start": 2000,
         "coverage_end": 2025,
-        "last_success": "2026-08-10T05:48:45+00:00",
+        "last_success": "2026-08-17T05:02:06+00:00",
         "status": "ok"
       }
     },
     "mtbs": {
       "status": "ok",
-      "last_success": "2026-08-10T05:48:45+00:00",
+      "last_success": "2026-08-17T05:02:06+00:00",
       "metadata": {
         "name": "MTBS mapped burned area",
         "landing_page": "https://www.mtbs.gov/direct-download",
@@ -2622,7 +2622,7 @@
         "url": "https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_MTBS_01/MapServer/63/query?where=fire_type%3D%27Wildfire%27+AND+year+%3C%3D+2025&outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22objectid%22%2C%22outStatisticFieldName%22%3A%22event_count%22%7D%2C%7B%22statisticType%22%3A%22sum%22%2C%22onStatisticField%22%3A%22acres%22%2C%22outStatisticFieldName%22%3A%22acres_sum%22%7D%5D&groupByFieldsForStatistics=year&orderByFields=year+ASC&returnGeometry=false&f=json",
         "coverage_start": 1984,
         "coverage_end": 2025,
-        "last_success": "2026-08-10T05:48:45+00:00",
+        "last_success": "2026-08-17T05:02:06+00:00",
         "status": "ok",
         "provisional_years": [
           2025
@@ -3258,7 +3258,7 @@
       },
       "mtbs": {
         "classification": "trend-like",
-        "sentence": "MTBS averaged 1,876,279 mapped acres in 1984\u20131993 and 6,577,623 in 2015\u20132024 after excluding provisional years; this is a separate mapped product, not a second NIFC total."
+        "sentence": "MTBS averaged 1,876,183 mapped acres in 1984\u20131993 and 6,587,515 in 2015\u20132024 after excluding provisional years; this is a separate mapped product, not a second NIFC total."
       }
     },
     "year_context": {
@@ -3730,8 +3730,8 @@
         "acres_per_fire": 65.9,
         "count_flag": false,
         "acre_rank": 21,
-        "precipitation": 29.25,
-        "precipitation_anomaly": -0.83,
+        "precipitation": 29.26,
+        "precipitation_anomaly": -0.82,
         "temperature": 54.63,
         "drought": 38.22
       }
