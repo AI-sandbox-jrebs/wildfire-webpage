@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-17T05:02:06+00:00",
+  "generated": "2026-08-24T05:05:36+00:00",
   "series": {
     "nifc": {
       "metadata": {
@@ -17,7 +17,7 @@
         "url": "https://www.nifc.gov/fire-information/statistics/wildfires",
         "coverage_start": 1983,
         "coverage_end": 2025,
-        "last_success": "2026-08-17T05:02:06+00:00",
+        "last_success": "2026-08-24T05:05:36+00:00",
         "status": "ok"
       },
       "records": [
@@ -338,7 +338,7 @@
         "url": "https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/national/time-series/110/pcp/12/12/1895-2025.json",
         "coverage_start": 1895,
         "coverage_end": 2025,
-        "last_success": "2026-08-17T05:02:06+00:00",
+        "last_success": "2026-08-24T05:05:36+00:00",
         "status": "ok",
         "baseline": 30.08,
         "baseline_period": "1895\u20132025"
@@ -1015,7 +1015,7 @@
         "url": "https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/national/time-series/110/tavg/12/12/1895-2025.json",
         "coverage_start": 1895,
         "coverage_end": 2025,
-        "last_success": "2026-08-17T05:02:06+00:00",
+        "last_success": "2026-08-24T05:05:36+00:00",
         "status": "ok"
       },
       "records": [
@@ -1559,7 +1559,7 @@
         "url": "https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/national/time-series/110/zndx/12/12/1895-2025.json",
         "coverage_start": 1895,
         "coverage_end": 2025,
-        "last_success": "2026-08-17T05:02:06+00:00",
+        "last_success": "2026-08-24T05:05:36+00:00",
         "status": "ok"
       },
       "records": [
@@ -2104,7 +2104,7 @@
         "url": "https://usdmdataservices.unl.edu/api/USStatistics/GetBasicStatisticsByAreaPercent?aoi=CONUS&dx=1&DxLevelThresholdFrom=0&DxLevelThresholdTo=100&startdate=1%2F1%2F2000&enddate=12%2F31%2F2025&statisticsType=1",
         "coverage_start": 2000,
         "coverage_end": 2025,
-        "last_success": "2026-08-17T05:02:06+00:00",
+        "last_success": "2026-08-24T05:05:36+00:00",
         "status": "ok"
       },
       "records": [
@@ -2498,7 +2498,7 @@
   "sources": {
     "nifc": {
       "status": "ok",
-      "last_success": "2026-08-17T05:02:06+00:00",
+      "last_success": "2026-08-24T05:05:36+00:00",
       "metadata": {
         "name": "NIFC annual wildfire statistics",
         "landing_page": "https://www.nifc.gov/fire-information/statistics/wildfires",
@@ -2514,13 +2514,13 @@
         "url": "https://www.nifc.gov/fire-information/statistics/wildfires",
         "coverage_start": 1983,
         "coverage_end": 2025,
-        "last_success": "2026-08-17T05:02:06+00:00",
+        "last_success": "2026-08-24T05:05:36+00:00",
         "status": "ok"
       }
     },
     "noaa_pcp": {
       "status": "ok",
-      "last_success": "2026-08-17T05:02:06+00:00",
+      "last_success": "2026-08-24T05:05:36+00:00",
       "metadata": {
         "name": "NOAA NCEI Climate at a Glance precipitation",
         "landing_page": "https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/national",
@@ -2534,7 +2534,7 @@
         "url": "https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/national/time-series/110/pcp/12/12/1895-2025.json",
         "coverage_start": 1895,
         "coverage_end": 2025,
-        "last_success": "2026-08-17T05:02:06+00:00",
+        "last_success": "2026-08-24T05:05:36+00:00",
         "status": "ok",
         "baseline": 30.08,
         "baseline_period": "1895\u20132025"
@@ -2542,7 +2542,7 @@
     },
     "noaa_tavg": {
       "status": "ok",
-      "last_success": "2026-08-17T05:02:06+00:00",
+      "last_success": "2026-08-24T05:05:36+00:00",
       "metadata": {
         "name": "NOAA NCEI Climate at a Glance average temperature",
         "landing_page": "https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/national",
@@ -2556,13 +2556,13 @@
         "url": "https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/national/time-series/110/tavg/12/12/1895-2025.json",
         "coverage_start": 1895,
         "coverage_end": 2025,
-        "last_success": "2026-08-17T05:02:06+00:00",
+        "last_success": "2026-08-24T05:05:36+00:00",
         "status": "ok"
       }
     },
     "noaa_zndx": {
       "status": "ok",
-      "last_success": "2026-08-17T05:02:06+00:00",
+      "last_success": "2026-08-24T05:05:36+00:00",
       "metadata": {
         "name": "NOAA NCEI Climate at a Glance Palmer Z-Index",
         "landing_page": "https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/national",
@@ -2576,13 +2576,13 @@
         "url": "https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/national/time-series/110/zndx/12/12/1895-2025.json",
         "coverage_start": 1895,
         "coverage_end": 2025,
-        "last_success": "2026-08-17T05:02:06+00:00",
+        "last_success": "2026-08-24T05:05:36+00:00",
         "status": "ok"
       }
     },
     "usdm": {
       "status": "ok",
-      "last_success": "2026-08-17T05:02:06+00:00",
+      "last_success": "2026-08-24T05:05:36+00:00",
       "metadata": {
         "name": "U.S. Drought Monitor",
         "landing_page": "https://droughtmonitor.unl.edu/DmData/DataDownload/WebServiceInfo.aspx",
@@ -2597,13 +2597,14 @@
         "url": "https://usdmdataservices.unl.edu/api/USStatistics/GetBasicStatisticsByAreaPercent?aoi=CONUS&dx=1&DxLevelThresholdFrom=0&DxLevelThresholdTo=100&startdate=1%2F1%2F2000&enddate=12%2F31%2F2025&statisticsType=1",
         "coverage_start": 2000,
         "coverage_end": 2025,
-        "last_success": "2026-08-17T05:02:06+00:00",
+        "last_success": "2026-08-24T05:05:36+00:00",
         "status": "ok"
       }
     },
     "mtbs": {
-      "status": "ok",
+      "status": "failed",
       "last_success": "2026-08-17T05:02:06+00:00",
+      "error": "Layer not found",
       "metadata": {
         "name": "MTBS mapped burned area",
         "landing_page": "https://www.mtbs.gov/direct-download",
